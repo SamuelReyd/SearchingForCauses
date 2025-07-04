@@ -1,0 +1,14 @@
+*.DS_Store*
+*.env*
+.ipynb_checkpoints/
+*__pycache__*
+*.zip
+env/*
+*.jpg
+*.json
+*.csv
+*.xml
+*.png
+*.gif
+*.npy
+*.pkl
