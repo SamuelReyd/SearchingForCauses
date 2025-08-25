@@ -5,6 +5,7 @@
 *.zip
 env/*
 *.jpg
+*.pdf
 *.json
 *.csv
 *.xml

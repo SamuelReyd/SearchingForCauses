@@ -8,6 +8,9 @@ from sklearn.metrics import r2_score
 from scipy.optimize import curve_fit
 
 
+from general import *
+
+
 ### Utils
 def show_all_vars(model, endo_vars, target):
     for var in endo_vars:

@@ -1,6 +1,6 @@
 # SearchingForCauses
 
-This is the repository for the implementations of the paper [*Searching for actual causes: approximate algorithms with adjustable precision*](Comming soon).
+This is the repository for the implementations of the paper [*Searching for actual causes: approximate algorithms with adjustable precision*](https://arxiv.org/abs/2507.07857).
 
 ## About this project
 
@@ -26,4 +26,14 @@ To reproduce the experiment from the paper, run:
 
 If you use this code for an academic work, please use the following citation:
 
-_Comming soon..._
+Reyd, S., Diaconescu, A., & Dessalles, J. L. (2025). Searching for actual causes: Approximate algorithms with adjustable precision. arXiv preprint arXiv:2507.07857.
+
+@misc{reyd2025searchingactualcauses,
+      title={Searching for actual causes: Approximate algorithms with adjustable precision}, 
+      author={Samuel Reyd and Ada Diaconescu and Jean-Louis Dessalles},
+      year={2025},
+      eprint={2507.07857},
+      archivePrefix={arXiv},
+      primaryClass={cs.AI},
+      url={https://arxiv.org/abs/2507.07857}, 
+}
