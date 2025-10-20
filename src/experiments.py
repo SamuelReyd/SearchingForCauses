@@ -58,16 +58,16 @@ if __name__ == "__main__":
     #     print()
         
     # Main experiments - noisy
-    exh = Exhaustivness.FULL
-    model = Models.NOISY
-    for algo in AlgoTypes:
-        for do_lucb in (True, False):
-            lucb_label = "lucb" if do_lucb else "naive"
-            if os.path.isfile(f"results/{model.value}-{exh.value}/{algo.value}-{lucb_label}.json"):
-                continue
-            params = base_params | {"do_lucb": do_lucb}
-            run_noisy_SMK(algo, n_attackers, beam_sizes,**params)
-    evaluate_noisy_SMK(prefix="")
+    # exh = Exhaustivness.FULL
+    # model = Models.NOISY
+    # for algo in AlgoTypes:
+    #     for do_lucb in (True, False):
+    #         lucb_label = "lucb" if do_lucb else "naive"
+    #         if os.path.isfile(f"results/{model.value}-{exh.value}/{algo.value}-{lucb_label}.json"):
+    #             continue
+    #         params = base_params | {"do_lucb": do_lucb}
+    #         run_noisy_SMK(algo, n_attackers, beam_sizes,**params)
+    # evaluate_noisy_SMK(prefix="")
     
     # Smallest identification
     # for algo in AlgoTypes:
@@ -78,12 +78,12 @@ if __name__ == "__main__":
     # evaluate_SMK(Models.BASE, Exhaustivness.SMALLEST, prefix="")
     
     # Noisy experiments
-    exh = Exhaustivness.FULL
-    model = Models.NOISY
-    for algo in AlgoTypes:
-        if os.path.isfile(f"results/noisy-params/{algo.value}.json"):
-            continue
-        print(f"Run noisy params with {algo=}")
-        run_noisy_SCM_params(base_params, Ns, batch_sizes, algo,
-                             beam_size=noisy_beam_size, N_exp=N_seeds, prefix="")
-    evaluate_params_SMK(algo, prefix="")
+    # exh = Exhaustivness.FULL
+    # model = Models.NOISY
+    # for algo in AlgoTypes:
+    #     if os.path.isfile(f"results/noisy-params/{algo.value}.json"):
+    #         continue
+    #     print(f"Run noisy params with {algo=}")
+    #     run_noisy_SCM_params(base_params, Ns, batch_sizes, algo,
+    #                          beam_size=noisy_beam_size, N_exp=N_seeds, prefix="")
+    # evaluate_params_SMK(algo, prefix="")
