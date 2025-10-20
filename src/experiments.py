@@ -1,7 +1,7 @@
 import numpy as np, json, os
 
 from ILP_why import run_ilp_SMK
-from general import Exhaustivness, Models, AlgoTypes, make_base_contexts
+from general import *
 from identification import run_ILP_SMK, evaluate_heuristics, run_SMK, run_noisy_SMK, run_noisy_SCM_params
 from evaluation import evaluate_SMK, evaluate_noisy_SMK, evaluate_params_SMK
 
@@ -36,26 +36,26 @@ if __name__ == "__main__":
     make_base_contexts(N, full_attackers)
 
     # ILP
-    if not os.path.isfile(f"results/base-smallest/ILP.json"):
-        print("Run ILP")
-        run_ILP_SMK(n_attackers_smallest, prefix="") 
+    # if not os.path.isfile(f"results/base-smallest/ILP.json"):
+    #     print("Run ILP")
+    #     run_ILP_SMK(n_attackers_smallest, prefix="") 
 
     # Heuristics
-    if not os.path.isfile(f"results/base-full/heuristics.json"):
-        evaluate_heuristics(n_attacker=5, N=50, measure="F1", prefix="")
+    # if not os.path.isfile(f"results/base-full/heuristics.json"):
+    #     evaluate_heuristics(n_attacker=5, N=50, measure="F1", prefix="")
     
     # Exact results - base model
     if not os.path.isfile(f"results/{Models.BASE.value}-{Exhaustivness.EXACT.value}/{AlgoTypes.STRUCTURED.value}.json"):
         run_SMK(n_attackers, [-1], Exhaustivness.EXACT, Models.BASE, AlgoTypes.STRUCTURED)
     
     # Main experiments - detrministic
-    for exh, model, algo in exps:
-        if os.path.isfile(f"results/{model.value}-{exh.value}/{algo.value}.json"): 
-            continue
-        run_SMK(n_attackers, beam_sizes, exh, model, algo)
-        print("Evaluation...")
-        evaluate_SMK(model, exh)
-        print()
+    # for exh, model, algo in exps:
+    #     if os.path.isfile(f"results/{model.value}-{exh.value}/{algo.value}.json"): 
+    #         continue
+    #     run_SMK(n_attackers, beam_sizes, exh, model, algo)
+    #     print("Evaluation...")
+    #     evaluate_SMK(model, exh)
+    #     print()
         
     # Main experiments - noisy
     exh = Exhaustivness.FULL
@@ -70,12 +70,12 @@ if __name__ == "__main__":
     evaluate_noisy_SMK(prefix="")
     
     # Smallest identification
-    for algo in AlgoTypes:
-        if os.path.isfile(f"results/base-smallest/{algo.value}.json"):
-            continue
-        run_SMK(n_attackers_smallest, beam_sizes_smallest, Exhaustivness.SMALLEST, Models.BASE, algo)
-        print()
-    evaluate_SMK(Models.BASE, Exhaustivness.SMALLEST, prefix="")
+    # for algo in AlgoTypes:
+    #     if os.path.isfile(f"results/base-smallest/{algo.value}.json"):
+    #         continue
+    #     run_SMK(n_attackers_smallest, beam_sizes_smallest, Exhaustivness.SMALLEST, Models.BASE, algo)
+    #     print()
+    # evaluate_SMK(Models.BASE, Exhaustivness.SMALLEST, prefix="")
     
     # Noisy experiments
     exh = Exhaustivness.FULL

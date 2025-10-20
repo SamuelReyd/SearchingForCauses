@@ -111,7 +111,7 @@ def run_one_noisy_SMK(u, beam_size, algo, do_lucb, cause_eps,
         )
     else:
         values, t = time_fn(
-            structured_identification, 
+            iterative_identification, 
             **SCM, 
             epsilon=eps,
             dag=dag, init_var_ids=init_var_ids,
@@ -297,7 +297,7 @@ def evaluate_heuristics(n_attacker, N, measure, prefix=""):
         instance = [0] * (len(variables)+1)
         SMK_model(instance,context,{},n_attacker)
         simulation = get_simulation(context, n_attacker, instance, heuristics["heuristic_const"])
-        ref_causes = structured_identification(instance, domains, simulation, variables, 
+        ref_causes = iterative_identification(instance, domains, simulation, variables, 
                                            dag=dag, init_var_ids=init_variables,
                                            max_steps=-1, beam_size=-1, early_stop=False, verbose=0)
         ref_causes = [tuple(c[3]) for c in ref_causes]
