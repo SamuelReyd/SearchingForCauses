@@ -5,11 +5,14 @@ from itertools import product
 
 from binary_models import *
 from benchmark_models import SMK_model, get_SMK_dim_labels, get_mSMK_SCM, get_bbSMK_SCM, get_nSMK_SCM
-from actualcauses import beam_search, iterative_identification
+# from actualcauses import beam_search, iterative_identification
+from actualcauses_local.base_algorithm import beam_search
+from actualcauses_local.iterative_subinstance_algorithm import iterative_identification
 
 from ILP_why import run_ilp_SMK
 from general import *
 
+# ==== Base run ===
 def run_one_SMK(contexts, n_attacker, beam_size, 
                 exh: Exhaustivness, model: Models, struct: AlgoTypes, 
                 max_steps=-1, verbose=0):
@@ -64,7 +67,6 @@ def run_one_SMK(contexts, n_attacker, beam_size,
             "time": t,
             "scores": [float(value[2]) for value in values]
         })
-        # print(data)
     return data
 
 def run_SMK(n_attackers, beam_sizes, 
@@ -87,16 +89,19 @@ def run_SMK(n_attackers, beam_sizes,
         results.append(data)
     save_json(prefix+f"results/{model.value}-{exh.value}/{struct.value}.json", results)
 
-def run_one_noisy_SMK(u, beam_size, algo, do_lucb, cause_eps, 
-                      non_cause_eps, beam_eps, batch_size, nl, N, eps, 
-                      seed, max_steps):
-    early_stop = False
+# === Noisy run ===
+def run_one_noisy_SMK(u, beam_size, algo, max_steps, lucb_params, seed):
     n_attacker = len(u) // 6
 
-    lucb_params = build_lucb_params(beam_size, do_lucb, cause_eps, 
-                                    non_cause_eps, beam_eps, 
-                                    batch_size, nl, N, eps)
-    
+    # lucb_params = build_lucb_params(beam_size, do_lucb, cause_eps, 
+    #                                 non_cause_eps, beam_eps, 
+    #                                 batch_size, N, nl, eps)
+
+    do_lucb = lucb_params["do_lucb"]
+    N = lucb_params["N"]
+    nl = lucb_params["nl"]
+    eps = lucb_params["a"]
+    lucb_params = lucb_params | {"beam_size": beam_size} if do_lucb else None
     SCM = get_nSMK_SCM(n_attacker, u, do_lucb=do_lucb, 
                        N=N, nl=nl, lucb_params=lucb_params)
     dag, init_var_ids = build_DAG(n_attacker, SCM["variables"])
@@ -106,7 +111,7 @@ def run_one_noisy_SMK(u, beam_size, algo, do_lucb, cause_eps,
             beam_search, 
             **SCM, 
             epsilon=eps,
-            early_stop=early_stop, beam_size=beam_size, 
+            early_stop=False, beam_size=beam_size, 
             verbose=0
         )
     else:
@@ -115,7 +120,7 @@ def run_one_noisy_SMK(u, beam_size, algo, do_lucb, cause_eps,
             **SCM, 
             epsilon=eps,
             dag=dag, init_var_ids=init_var_ids,
-            early_stop=early_stop, beam_size=beam_size, 
+            early_stop=False, beam_size=beam_size, 
             verbose=0
         )
     
@@ -134,14 +139,12 @@ def run_one_noisy_SMK(u, beam_size, algo, do_lucb, cause_eps,
         "lucb_infos": lucb_params["lucb_infos"] if lucb_params is not None else None
     }
 
-def run_noisy_SMK(algo, n_attackers, beam_sizes, do_lucb,
-                  cause_eps, non_cause_eps, beam_eps, batch_size, nl, N, eps,
-                  seed=42, max_steps=-1, prefix=""):
+def run_noisy_SMK(algo, n_attackers, beam_sizes, max_steps, lucb_params, n_seeds, prefix=""):
     results = []
     all_contexts = {n_attacker: 
                 np.load(prefix+f"results/contexts/{n_attacker=}.npy")
                for n_attacker in n_attackers}
-    lucb_label = "lucb" if do_lucb else "naive"
+    lucb_label = "lucb" if lucb_params["do_lucb"] else "naive"
     print("Indentify for:")
     print(f"  Exhaustiveness: {Exhaustivness.FULL.value}")
     print(f"  Version of SMK: {Models.NOISY.value}")
@@ -154,67 +157,62 @@ def run_noisy_SMK(algo, n_attackers, beam_sizes, do_lucb,
         data = {
             "n_attacker": n_attacker,
             "beam_size": beam_size,
+            "max_steps": max_steps,
             "exhaustiveness": Exhaustivness.FULL.value,
             "model": Models.NOISY.value,
             "algo": algo.value,
-            "do_lucb": do_lucb,
-            "cause_eps": cause_eps,
-            "non_cause_esp": non_cause_eps,
-            "beam_eps": beam_eps,
-            "batch_size": batch_size,
-            "nl":nl,
-            "N": N,
-            "eps":eps,
-            "seed":seed,
+            "nl": nl, 
+            "lucb_params": lucb_params,
             "results": []
         }
+
         for u in contexts:
             u = u.tolist()
-            data["results"].append(
-                run_one_noisy_SMK(u, beam_size, algo, do_lucb, cause_eps, 
-                                  non_cause_eps, beam_eps, batch_size, nl, N, eps, 
-                                  seed, max_steps)
-            )
+            for seed in range(n_seeds):
+                data["results"].append(
+                    run_one_noisy_SMK(u, beam_size, algo, max_steps, lucb_params, seed)
+                )
         results.append(data)
     save_json(
         prefix+f"results/{Models.NOISY.value}-{Exhaustivness.FULL.value}/{algo.value}-{lucb_label}.json", 
         results
     )
 
-def run_noisy_SCM_params(base_params, Ns, batch_sizes, algo,
-                         u=[0, 1, 1, 0, 1, 1, 1, 1, 1, 1, 1, 0, 0, 1, 0, 0, 0, 0],
-                         beam_size=50, N_exp=50, prefix=""
-                        ):
-    data = []
-    for N in tqdm(Ns):
-        for do_lucb in (True, False):
-            if do_lucb: bs = batch_sizes
-            else: bs = [None]
-            for batch_size in bs:
-                params = base_params | {
-                    "beam_size": beam_size,
-                    "N": N,
-                    "batch_size": batch_size,
-                    "do_lucb": do_lucb,
-                }
-                lucb_params = build_lucb_params(**params)
-                datum = {
-                    **params,
-                    "lucb_params": lucb_params,
-                    "u": u,
-                    "n_attacker": len(u)//6,
-                    "results": []
-                }
-                for seed in range(N_exp):
-                    res = run_one_noisy_SMK(
-                    u, **params, algo=algo,
-                    seed=seed, max_steps=-1
-                )
-                    datum["results"].append(res)
-                data.append(datum)
-    save_json(prefix+f"results/noisy-params/{algo.value}.json", data)
+# def run_noisy_SCM_params(base_params, Ns, nl, batch_sizes, algo,
+#                          u=[0, 1, 1, 0, 1, 1, 1, 1, 1, 1, 1, 0, 0, 1, 0, 0, 0, 0],
+#                          beam_size=50, N_exp=50, prefix=""
+#                         ):
+#     data = []
+#     for N in tqdm(Ns):
+#         for do_lucb in (True, False):
+#             if do_lucb: bs = batch_sizes
+#             else: bs = [None]
+#             for batch_size in bs:
+#                 params = base_params | {
+#                     "beam_size": beam_size,
+#                     "N": N,
+#                     "nl": nl,
+#                     "batch_size": batch_size,
+#                     "do_lucb": do_lucb,
+#                 }
+#                 lucb_params = build_lucb_params(**params)
+#                 datum = {
+#                     **params,
+#                     "lucb_params": lucb_params,
+#                     "u": u,
+#                     "n_attacker": len(u)//6,
+#                     "results": []
+#                 }
+#                 for seed in range(N_exp):
+#                     res = run_one_noisy_SMK(
+#                     u, **params, algo=algo,
+#                     seed=seed, max_steps=-1
+#                 )
+#                     datum["results"].append(res)
+#                 data.append(datum)
+#     save_json(prefix+f"results/noisy-params/{algo.value}.json", data)
 
-
+# === ILP ===
 def serialize_symbols(C, variables):
     var_map = {val: i for i, val in enumerate(variables)}
     return [var_map[s.name] for s in C]
@@ -262,6 +260,7 @@ def run_ILP_SMK(n_attackers, prefix=""):
         results.append(data)
     save_json(prefix+f"results/{model.value}-{exh.value}/ILP.json", results)
 
+# === Heuristics ===
 def simulate_SMK_heuristic(rules, u, n_attacker, instance, heuristic):
     output = []
     variables = get_SMK_dim_labels(n_attacker)

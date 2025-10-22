@@ -6,13 +6,36 @@ from benchmark_models import SMK_model, get_SMK_dim_labels
 from collections.abc import Iterable
 from enum import Enum
 
-
-N = 50
+# === Hyper parameters ===
+# == General ==
+N = 20
 n_attackers = (2,5,10)
 n_attackers_smallest = [2,  4,  6,  8, 11, 13, 15, 17, 20]
 full_attackers = list(set(n_attackers) | set(n_attackers_smallest))
 beam_sizes = [ 1, 12, 25, 37, 50]
 beam_sizes_smallest = [  1,  11,  22,  33,  44,  55,  66,  77,  88, 100]
+
+# == Noisy global params ==
+nl = 1.5
+n_seeds = 10
+
+# == LUCB params ==
+max_iter_noisy = 20
+lucb_params = {
+    "cause_eps": .01,
+    "non_cause_eps": .01,
+    "beam_eps": .1,
+    
+    "a": .3,
+    "beam_size": None,
+    
+    "max_iter": max_iter_noisy,
+    "batch_size": int(max_iter_noisy*.2),
+    "init_batch_size": int(max_iter_noisy*.8),
+    
+    "verbose": 0,
+    
+}
 
 # General
 class AlgoTypes(Enum):
@@ -57,12 +80,13 @@ def get_struct_label(struct):
     return "structured" if struct else "base_algo"
 
 def build_lucb_params(beam_size, do_lucb, cause_eps, 
-                      non_cause_esp, beam_eps, batch_size, nl, N, eps):
+                      non_cause_esp, beam_eps, batch_size, N, nl, eps):
     if do_lucb:
         lucb_params = {
             "lucb_infos": [],
             "beam_size": beam_size,
             "max_iter": N,
+            "nl": nl,
             "a": eps,
             "cause_eps": cause_eps,
             "non_cause_esp": non_cause_esp,

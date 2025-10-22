@@ -8,6 +8,7 @@ from benchmark_models import SMK_model, get_SMK_dim_labels, get_bbSMK_SCM
 from benchmark_models import get_noisy_suzy_SCM, get_nSMK_SCM
 from actualcauses import beam_search, iterative_identification
 
+# === General ===
 def filter_minimality(candidates):
     Cs = [values[0] for values in candidates]
     candidates = [values for values in candidates if not any([set(c) < set(values[0]) for c in Cs])]
@@ -36,6 +37,7 @@ def build_ref_causes(data):
         ref_causes[key] = {tuple(c) for c in min_causes}
     return ref_causes
 
+# === Evaluation token ===
 def evaluate_smallest(causes, ref_causes):
     if not len(causes): return {"accuracy": 0}
     if not len(ref_causes): return {"accuracy": -1}
@@ -80,6 +82,7 @@ def evaluate_full(causes, ref_causes):
 
 evaluators = {Exhaustivness.FULL: evaluate_full, Exhaustivness.SMALLEST: evaluate_smallest}
 
+# === Reference causes ===
 def get_exact_causes(prefix=""):
     ref_causes = {}
     data = load_json(prefix+"results/base-exact/structured.json")
@@ -127,7 +130,20 @@ def build_ref_causes_bb(data):
                 ref_causes[f"{context_repr}-{n_attacker}"] |= min_Cs
     return ref_causes
 
+def compute_ref_causes(u):
+    n_attacker = len(u)//6
+    variables = get_SMK_dim_labels(n_attacker)
+    
+    SCM = make_SCM(variables, u, SMK_model, n_attacker=n_attacker)
+    dag, init_var_ids = build_DAG(n_attacker, SCM["variables"])
 
+    return iterative_identification(**SCM, 
+                                     dag=dag, 
+                                     init_var_ids=init_var_ids,
+                                     max_steps=-1, beam_size=-1, 
+                                     verbose=0, early_stop=False)
+
+# === General evaluations ===
 def evaluate_SMK(model: Models, exh: Exhaustivness,
                  prefix=""):
 
@@ -194,19 +210,6 @@ def evaluate_noisy_SMK(prefix=""):
         
         
             save_json(file_name, data)
-
-def compute_ref_causes(u):
-    n_attacker = len(u)//6
-    variables = get_SMK_dim_labels(n_attacker)
-    
-    SCM = make_SCM(variables, u, SMK_model, n_attacker=n_attacker)
-    dag, init_var_ids = build_DAG(n_attacker, SCM["variables"])
-
-    return iterative_identification(**SCM, 
-                                     dag=dag, 
-                                     init_var_ids=init_var_ids,
-                                     max_steps=-1, beam_size=-1, 
-                                     verbose=0, early_stop=False)
 
 def evaluate_params_SMK(algo,
                         u=[0, 1, 1, 0, 1, 1, 1, 1, 1, 1, 1, 0, 0, 1, 0, 0, 0, 0],

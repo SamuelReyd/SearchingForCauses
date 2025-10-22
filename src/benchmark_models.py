@@ -1,7 +1,8 @@
 import math, numpy as np
 from itertools import combinations
 from sympy import symbols, Equivalent, to_cnf, Or, And, Not
-from actualcauses import lucb
+# from actualcauses import lucb
+from actualcauses_local.lucb import lucb
 from tqdm import tqdm
 
 """Rock Throwing"""
@@ -523,8 +524,8 @@ def get_nSMK_SCM(n_attacker, u, do_lucb=True, N=100, nl=.05, lucb_params={}):
     s, _, _ = nSMK_simulation([], u, n_attacker, nl=0) # No noise for the instance
     domains = ((0,1),)*(len(variables)-1)
     if do_lucb:
-        simulation = lambda rules: lucb_nSMK_simulation(rules, u, n_attacker, N, lucb_params, nl)
+        simulation = lambda rules: lucb_nSMK_simulation(rules, u, n_attacker, N, lucb_params, nl/len(variables))
     else: 
-        simulation = lambda rules: avg_nSMK_simulation(rules, u, n_attacker, N, nl)
+        simulation = lambda rules: avg_nSMK_simulation(rules, u, n_attacker, N, nl/len(variables))
     return {"variables": variables[:-1], "domains":domains,
             "simulation": simulation, "instance":s}
