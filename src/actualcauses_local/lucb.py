@@ -40,8 +40,8 @@ def compute_beta(n_features, t):
     return temp + np.log(temp)
 
 
-def lucb(simulation, rules, beam_size, a=.05, beam_eps=.1, cause_eps=.01, non_cause_esp=.01, 
-         max_iter=200, verbose=0, batch_size=10, init_batch_size=20, lucb_infos=None):
+def lucb(evaluator, rules, beam_size, a=.05, beam_eps=.1, cause_eps=.01, non_cause_eps=.01, 
+         max_iter=200, verbose=0, batch_size=10, init_batch_size=20, lucb_info=None):
         
     n_arms = len(rules) # Doing armed bandits with the rules to evaluate
     # For each arm we keep track of the number of samples, the number of success, the upper bound and the lower bound
@@ -55,9 +55,9 @@ def lucb(simulation, rules, beam_size, a=.05, beam_eps=.1, cause_eps=.01, non_ca
     def action_arm(arm, init=False):
         bs = init_batch_size if init else batch_size
         for _ in range(bs):
-            _, label, score = simulation(rules[arm])
-            positives[arm] += label
-            scores[arm] += score
+            phi, psi = evaluator(rules[arm])
+            positives[arm] += phi
+            scores[arm] += psi
         n_samples[arm] += bs
         means[arm] = positives[arm] / n_samples[arm]
         mean_scores[arm] = scores[arm] / n_samples[arm]
@@ -92,7 +92,7 @@ def lucb(simulation, rules, beam_size, a=.05, beam_eps=.1, cause_eps=.01, non_ca
         if not ids.size: return 0
         lt = ids[np.argmin(lb[ids])]
         B = a - lb[lt]
-        if B >= non_cause_esp:
+        if B >= non_cause_eps:
             action_arm(lt)
         return B
 
@@ -119,11 +119,11 @@ def lucb(simulation, rules, beam_size, a=.05, beam_eps=.1, cause_eps=.01, non_ca
     with tqdm(total=n_arms * max_iter, disable=not verbose) as pbar:
         while n_samples.sum() < n_arms * max_iter:
             # Stop condition
-            if beam_bound <= beam_eps and cause_bound <= cause_eps and non_cause_bound <= non_cause_esp: 
+            if beam_bound <= beam_eps and cause_bound <= cause_eps and non_cause_bound <= non_cause_eps: 
                 if verbose > 1: 
                     print(f"Success: {beam_bound=:.4f} / {cause_bound=:.4f} / {non_cause_bound=:.4f})")
                 break
-            if cause_bound <= cause_eps and non_cause_bound <= non_cause_esp and beam_size + (means < a).sum() >= n_arms:
+            if cause_bound <= cause_eps and non_cause_bound <= non_cause_eps and beam_size + (means < a).sum() >= n_arms:
                 if verbose > 1:
                     print(f"All rules pass on to next state: {cause_bound=:.4f}, {non_cause_bound=:.4f}")
                 break
@@ -146,8 +146,8 @@ def lucb(simulation, rules, beam_size, a=.05, beam_eps=.1, cause_eps=.01, non_ca
         print(f"lb={lb.round(4)}")
         print(f"preds={means.round(2)}")
         print(f"n_samples={n_samples}")
-    if lucb_infos is not None:
-        lucb_infos.append({
+    if lucb_info is not None:
+        lucb_info.append({
             "n_calls": int(n_samples.sum())
         })
     outputs = [((n_sample, ub_i, lb_i), mean, mean_score) for \

@@ -86,14 +86,14 @@ def expand_node(cause_vars, dag):
                 child += (cause_vars[i],)
             else:
                 child += tuple(dag[cause_vars[i]])
-        yield child
+        yield tuple(set(child))
 
 def iterative_identification(
-    instance, domains, simulation, variables, dag, init_var_ids, 
+    v, D, simulation, V, dag, init_var_ids, 
     **kargs
 ):
     verbose = kargs.get("verbose", 0)
-    early_stop = kargs.get("early_stop", True)
+    early_stop = kargs.get("early_stop", False)
     queue = deque([(init_var_ids,None)])
     visited = set()
     current_depth = 0
@@ -103,11 +103,11 @@ def iterative_identification(
         # Set up node
         if verbose: print(f"{len(queue)=}")
         var_ids, beams_w = queue.popleft()
-        visited.add(var_ids)
+        visited.add(tuple(var_ids))
         if verbose: print(f"{var_ids=}, {beams_w=}")
         
         # Evaluate node
-        causes, Cs = make_beam_search(instance, domains, simulation, variables, 
+        causes, Cs = make_beam_search(v, D, simulation, V, 
                                       var_ids, 
                                       beams_w=beams_w,
                                       Cs=Cs, **kargs)
@@ -120,10 +120,14 @@ def iterative_identification(
         control = set()
         for cause in causes:
             cause_vars = tuple(cause[3])
-            beams_w = tuple([(dim, instance[dim]) for dim in cause[4]])
+            beams_w = tuple([(dim, v[dim]) for dim in cause[4]])
             for child_vars in expand_node(cause_vars, dag):
                 if check_node_for_expansion(child_vars, visited, control):
-                    if verbose: print(f"  Cause {get_rule_desc(cause, variables)} -> {child_vars} {beams_w}")
+                    if verbose: 
+                        cause_repr = get_rule_desc(cause, V)
+                        child_repr = [V[i] for i in child_vars]
+                        W_repr = [V[i[0]] for i in beams_w]
+                        print(f"  Cause {cause_repr} -> Exp:{child_repr} W:{W_repr}")
                     queue.append((child_vars,beams_w))
                     control.add(tuple(child_vars))
                 

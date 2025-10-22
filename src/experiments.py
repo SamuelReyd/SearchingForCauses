@@ -72,9 +72,8 @@ if __name__ == "__main__":
             lucb_label = "lucb" if do_lucb else "naive"
             if os.path.isfile(f"results/{model.value}-{exh.value}/{algo.value}-{lucb_label}.json"):
                 continue
-            lucb_params["do_lucb"] = do_lucb
-            run_noisy_SMK(algo, (2,5,10), (12,25), max_steps, 
-                          lucb_params, n_seeds, nl)
+            run_noisy_SMK(algo, (2,5), (12,25), max_steps, 
+                          lucb_params, n_seeds, nl, do_lucb)
     evaluate_noisy_SMK(prefix="")
 
     # == Depreciated ==

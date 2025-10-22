@@ -167,10 +167,10 @@ def map_beams(beams, var_mapping, ref_w):
     return sim_beams
 
 def beam_search(
-    instance, domains, simulation, variables, # SCM
-    max_steps=5, beam_size=10, epsilon=.05, early_stop=True, max_time=None, # Parameters
+    v, D, simulation, V, # SCM
+    max_steps=5, beam_size=10, epsilon=.05, early_stop=False, max_time=None, # Parameters
     var_mapping=None, ref_w=tuple(), Cs=None, # Additional parameters when running for sub-instance
-    verbose=0, 
+    verbose=0, output_info=True
     ):
     # verbose: 
     #  = 1 -> best cause at the end, tqdm for steps
@@ -188,7 +188,7 @@ def beam_search(
         if verbose >= 2: print(f"{f'Step {t}':=^30}")
             
         # Create the rules for step t base on the ones from t-1, we use the initial ones if t==1
-        beams = get_rules(beams if t > 1 else None, domains, instance, Cs, verbose >= 3)
+        beams = get_rules(beams if t > 1 else None, D, v, Cs, verbose >= 3)
 
         # Check for early stop
         if check_early_stop(beams, early_stop, all_causes, max_time, init_time):
@@ -202,7 +202,7 @@ def beam_search(
         cf_values = simulation(sim_beams)
         
         # Build the tuples of rule values
-        causes, non_causes = split_rules(beams, cf_values, instance, epsilon)
+        causes, non_causes = split_rules(beams, cf_values, v, epsilon)
 
         # Filter causes to keep only minimal ones and save them
         causes = filter_minimality(causes)
@@ -214,7 +214,7 @@ def beam_search(
         beams = get_next_beams(non_causes, beam_size, Cs)
         
         # Render step output
-        render_step(verbose, causes, non_causes, instance, variables)
+        render_step(verbose, causes, non_causes, v, V)
 
     # Sort final rule set
     all_causes.sort(key=sort_key)
@@ -224,6 +224,6 @@ def beam_search(
         print(f"----> Found {len(all_causes)} causes.")
         if all_causes:
             print(f"{'Overall best rule:':=^30}")
-            show_rule(all_causes[0], variables)
-        
+            show_rule(all_causes[0], V)
+    if not output_info: all_causes = [elt[3:5] for elt in all_causes]
     return all_causes

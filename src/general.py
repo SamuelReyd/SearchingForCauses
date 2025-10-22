@@ -1,7 +1,7 @@
 import numpy as np, json, os
 from tqdm import tqdm
 
-from benchmark_models import SMK_model, get_SMK_dim_labels
+from benchmark_models import SMK_model, get_SMK_V
 
 from collections.abc import Iterable
 from enum import Enum
@@ -14,6 +14,7 @@ n_attackers_smallest = [2,  4,  6,  8, 11, 13, 15, 17, 20]
 full_attackers = list(set(n_attackers) | set(n_attackers_smallest))
 beam_sizes = [ 1, 12, 25, 37, 50]
 beam_sizes_smallest = [  1,  11,  22,  33,  44,  55,  66,  77,  88, 100]
+max_steps = 4
 
 # == Noisy global params ==
 nl = 1.5
@@ -34,6 +35,7 @@ lucb_params = {
     "init_batch_size": int(max_iter_noisy*.8),
     
     "verbose": 0,
+    "lucb_info": None,
     
 }
 
@@ -79,31 +81,13 @@ def save_json(path, data):
 def get_struct_label(struct):
     return "structured" if struct else "base_algo"
 
-def build_lucb_params(beam_size, do_lucb, cause_eps, 
-                      non_cause_esp, beam_eps, batch_size, N, nl, eps):
-    if do_lucb:
-        lucb_params = {
-            "lucb_infos": [],
-            "beam_size": beam_size,
-            "max_iter": N,
-            "nl": nl,
-            "a": eps,
-            "cause_eps": cause_eps,
-            "non_cause_esp": non_cause_esp,
-            "beam_eps": beam_eps,
-            "batch_size": batch_size,
-            "verbose": 0
-        }
-    else: lucb_params = None
-    return lucb_params
-
 
 # Contexts
 def generate_base_contexts_SMK(n_attacker, N, seed=42):
     if seed is not None: np.random.seed(seed)
     exo_vars = ("fs", "fn", "ff", "fdb", "a", "ad")
     n_exo_vars = n_attacker * len(exo_vars)
-    n_endo_vars = len(get_SMK_dim_labels(n_attacker))
+    n_endo_vars = len(get_SMK_V(n_attacker))
     contexts = np.zeros((N,n_exo_vars), dtype=int)
     s = np.ones(n_endo_vars)
     for n in tqdm(range(N)):
