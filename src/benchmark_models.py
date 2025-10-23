@@ -568,41 +568,46 @@ def nSMK_model(u, e, n, t):
     )
     return s
 
-def avg_nSMK_simulation(E, u, n, N, t):
-    outputs = []
-    for e in E:
-        runs = []
-        P, S = 0, 0
-        for _ in range(N):
-            s = nSMK_model(u, e, n, t)
-            runs.append(s)
-            P += s[-1]
-            S += psi(s)
-        outputs.append((runs, P/N, S/N))
-    return outputs
+def avg_nSMK_model(u, e, n, t, N):
+    V = get_SMK_V(n)
+    S = np.zeros(len(V))
+    for _ in range(N):
+        s = nSMK_model(u, e, n, t)
+        S += s
+    return (S / N).tolist()
+
+def get_avg_nSMK_SCM(n, u, N, nl):
+    V = get_SMK_V(n)
+    v = nSMK_model(u, [], n, t=0) # No noise for the instance
+    t = nl/len(V) # Compute the noise threshold with the noise level
+    return SCM(
+        V=V,
+        U=get_SMK_U(n),
+        D=(0,1),
+        F=lambda u,e: avg_nSMK_model(u, e, n, t, N),
+        u=u,
+        psi=psi,
+        dag=get_SMK_DAG(n),
+        v=v,
+    )
     
-def get_nSMK_SCM(n, u, do_lucb, N, nl, lucb_params=None):
+def get_lucb_nSMK_SCM(n, u, nl, lucb_params=None):
     V = get_SMK_V(n)
     v = nSMK_model(u, [], n, t=0) # No noise for the instance
     t = nl/len(V) # Compute the noise threshold with the noise level
     
     def lucb_evaluator(e):
         s = nSMK_model(u, e, n, t)
-        return s[-1], psi(s)
+        return s[-1], psi(s)/len(s)
         
-    if do_lucb:
-        simulation = lambda E: lucb(lucb_evaluator, E, **lucb_params)
-    else: 
-        simulation = lambda E: avg_nSMK_simulation(E, u, n, N, t)
-    scm = SCM(
+    return SCM(
         V=V,
         U=get_SMK_U(n),
-        D=[(0,1)] * (6 * n + 1),
+        D=(0,1),
         F=lambda u,e: nSMK_model(u,e,n,t),
         u=u,
         psi=psi,
         dag=get_SMK_DAG(n),
-        sim=simulation
+        sim=lambda E: lucb(lucb_evaluator, E, **lucb_params),
+        v=v,
     )
-    scm.get_v = lambda: v
-    return scm

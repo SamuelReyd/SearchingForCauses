@@ -4,7 +4,7 @@ from tqdm import tqdm
 from itertools import product
 
 from binary_models import *
-from benchmark_models import SMK_model, get_SMK_V, get_mSMK_SCM, get_bbSMK_SCM, get_nSMK_SCM
+from benchmark_models import SMK_model, get_SMK_V, get_mSMK_SCM, get_bbSMK_SCM, get_avg_nSMK_SCM, get_lucb_nSMK_SCM
 # from actualcauses import beam_search, iterative_identification
 from actualcauses_local.base_algorithm import beam_search
 from actualcauses_local.iterative_subinstance_algorithm import iterative_identification

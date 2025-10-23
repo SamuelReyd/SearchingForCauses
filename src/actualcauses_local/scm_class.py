@@ -1,6 +1,8 @@
+from collections.abc import Iterable
+
 class SCM:
     def __init__(self, V:list, U:list, D:list[list], F:callable, u:list, 
-                 psi:callable, dag:list[list]=None, sim:callable=None):
+                 psi:callable, dag:list[list]=None, sim:callable=None, v:list=None):
         """
         SCM object that includes everything needed to execute the algorithms
             V: list of endogenous variables labels (the target must be the last variable)
@@ -16,19 +18,29 @@ class SCM:
                 This argument is a more general approach when F is harder to obtain than phi and psi.
                 This can be used when the heuristic is more complex than a function of the cf state.
                 This is also used for LUCB, as several interventions are evaluated together. 
-            dag (optional): a list of lists where each element i is the set of causal parents of V[i]
+            dag (optional): a list of lists where each element i is the set of causal parents of V[i].
+            v (optional): a list of values for v. If none is provided, then F(u,[]) is used. 
+                Providing v can be useful for stochastic experiments.
 
             args: V, U, D, F, u, psi, dag
         """
         self.V = V
         self.U = U
-        self.D = D
+        if isinstance(D[0], Iterable):
+            self.D = D
+        else:
+            self.D = [D] * len(V)
         self.F = F
         self.u = u
         self.psi = psi
         self.dag = dag
         self.init_vars = dag[-1] if dag is not None else None
         self.sim = sim
+        if v is None:
+            self.v = self.apply_intervention([])
+        else:
+            self.v = v
+        
 
     def apply_intervention(self, e):
         """
@@ -70,8 +82,8 @@ class SCM:
             out.append((s, s[-1], self.psi(s)))
         return out
 
-    def get_v(self):
-        return self.apply_intervention([])
+    # def get_v(self):
+    #     return self.apply_intervention([])
 
     def get_input(self, base=True):
         if base:
@@ -80,5 +92,5 @@ class SCM:
         return self.get_input_beam_search() | {"dag": self.dag, "init_var_ids":self.init_vars}
 
     def get_input_beam_search(self):
-        return {"v": self.get_v()[:-1], "V": self.V[:-1], "D": self.D[:-1], "simulation": self.apply_interventions}
+        return {"v": self.v[:-1], "V": self.V[:-1], "D": self.D[:-1], "simulation": self.apply_interventions}
         
