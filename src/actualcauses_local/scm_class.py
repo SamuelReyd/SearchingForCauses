@@ -1,4 +1,5 @@
 from collections.abc import Iterable
+from .base_algorithm import beam_search
 
 class SCM:
     def __init__(self, V:list, U:list, D:list[list], F:callable, u:list, 
@@ -40,6 +41,9 @@ class SCM:
             self.v = self.apply_intervention([])
         else:
             self.v = v
+        self.causes = None
+        self.identification_output = None
+        self.interventions = None
         
 
     def apply_intervention(self, e):
@@ -82,9 +86,6 @@ class SCM:
             out.append((s, s[-1], self.psi(s)))
         return out
 
-    # def get_v(self):
-    #     return self.apply_intervention([])
-
     def get_input(self, base=True):
         if base:
             return self.get_input_beam_search()
@@ -93,4 +94,17 @@ class SCM:
 
     def get_input_beam_search(self):
         return {"v": self.v[:-1], "V": self.V[:-1], "D": self.D[:-1], "simulation": self.apply_interventions}
+
+    def find_causes(self, max_steps=5, beam_size=10, epsilon=.05, early_stop=False, max_time=None, # Parameters
+                    var_mapping=None, ref_w=tuple(), Cs=None, # Additional parameters when running for sub-instance
+                    verbose=0, output_info=True):
+        out = beam_search(**self.get_input(), max_steps=max_steps, beam_size=beam_size, 
+                          epsilon=epsilon, early_stop=early_stop, 
+                          max_time=max_time, # Parameters
+                          var_mapping=var_mapping, ref_w=ref_w, Cs=Cs, # Additional parameters when running for sub-instance
+                          verbose=verbose, output_info=output_info)
+        self.identification_output = out
+        self.causes = [elt[3] for elt in out]
+        self.interventions = [elt[0] for elt in out]
+        
         

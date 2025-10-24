@@ -32,6 +32,18 @@ def dlow_bernoulli(p, level):
         um = qm
     return lm
 
+def hoeffding_upper_bound(mean, n_samples, beta):
+    """Upper confidence bound using Hoeffding's inequality for [0,1] bounded random variables."""
+    if n_samples == 0:
+        return 1.0
+    return min(1.0, mean + np.sqrt(beta / (2 * n_samples)))
+
+def hoeffding_lower_bound(mean, n_samples, beta):
+    """Lower confidence bound using Hoeffding's inequality for [0,1] bounded random variables."""
+    if n_samples == 0:
+        return 0.0
+    return max(0.0, mean - np.sqrt(beta / (2 * n_samples)))
+
 def compute_beta(n_features, t):
     delta = .1
     alpha = 1.1
@@ -42,7 +54,7 @@ def compute_beta(n_features, t):
 
 
 def lucb(evaluator, rules, beam_size, a=.05, beam_eps=.1, cause_eps=.01, non_cause_eps=.01, 
-         max_iter=200, verbose=0, batch_size=10, init_batch_size=20, lucb_info=None):
+         max_iter=200, verbose=0, batch_size=10, init_batch_size=20, lucb_info=None):#, estim_phi_correct=0):
         
     n_arms = len(rules) # Doing armed bandits with the rules to evaluate
 
@@ -51,7 +63,7 @@ def lucb(evaluator, rules, beam_size, a=.05, beam_eps=.1, cause_eps=.01, non_cau
     phi[ub] = 1
     psi = np.zeros((4,n_arms)) # sum, mean, ub, lb
     psi[ub] = 1
-    init_psi = np.zeros((init_batch_size,n_arms)) # init_runs
+    # init_psi = np.zeros((init_batch_size,n_arms)) # init_runs
     n_samples = np.zeros(n_arms, dtype=int)
     
     beta = 0
@@ -71,10 +83,11 @@ def lucb(evaluator, rules, beam_size, a=.05, beam_eps=.1, cause_eps=.01, non_cau
         for i in range(bs):
             phi_value, psi_value = evaluator(rules[arm])
             phi[s,arm] += phi_value
-            if init:
-                init_psi[i,arm] = psi_value
-            else:
-                psi[s,arm] += (psi_value > ref_psi_value)
+            psi[s,arm] += psi_value #np.random.rand() < psi_value
+            # if init:
+            #     init_psi[i,arm] = psi_value
+            # else:
+            #     psi[s,arm] += (psi_value > ref_psi_value)
         n_samples[arm] += bs
         psi[m,arm] = psi[s,arm] / n_samples[arm]
         phi[m,arm] = phi[s,arm] / n_samples[arm]
@@ -88,9 +101,9 @@ def lucb(evaluator, rules, beam_size, a=.05, beam_eps=.1, cause_eps=.01, non_cau
         non_beam_ids = sorted_non_cause_ids[batch_size:]
         if not beam_ids.size or not non_beam_ids.size: return 0
         for i in beam_ids:
-            psi[ub,i] = dup_bernoulli(psi[m,i], beta / n_samples[i])
+            psi[ub,i] = hoeffding_upper_bound(psi[m,i], n_samples[i], beta)
         for i in non_beam_ids:
-            psi[lb,i] = dlow_bernoulli(psi[m,i], beta / n_samples[i])
+            psi[lb,i] = hoeffding_lower_bound(psi[m,i], n_samples[i], beta)
             
         ut = beam_ids[np.argmax(psi[ub,beam_ids])]
         lt = non_beam_ids[np.argmin(psi[lb,non_beam_ids])]
@@ -132,8 +145,10 @@ def lucb(evaluator, rules, beam_size, a=.05, beam_eps=.1, cause_eps=.01, non_cau
         action_arm(arm, True)
     # Compute ref value as a threshold for making it into the beam or not
     # print(init_psi)
-    ref_psi_value = make_initialization()
-    print(f"ref psi {ref_psi_value:.2f}")
+    # ref_psi_value = make_initialization()
+    # if verbose == -1: print(f"ref psi {ref_psi_value:.2f}")
+    # ref_psi_value += estim_phi_correct
+    # if verbose == -1: print(f"ref psi corrected {ref_psi_value:.2f}")
     it = 1
     # Loop
     with tqdm(total=n_arms * max_iter, disable=not verbose) as pbar:

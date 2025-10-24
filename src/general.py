@@ -27,7 +27,7 @@ lucb_params = {
     "non_cause_eps": .01,
     "beam_eps": .1,
     
-    "a": .3,
+    "a": .3, #.65,
     "beam_size": None,
     
     "max_iter": max_iter_noisy,

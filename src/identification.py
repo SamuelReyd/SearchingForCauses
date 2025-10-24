@@ -13,12 +13,13 @@ from ILP_why import run_ilp_SMK
 from general import *
 
 # ==== Base run ===
-def run_one_SMK(contexts, n_attacker, beam_size, 
+def run_one_SMK(contexts, n, beam_size, 
                 exh: Exhaustivness, model: Models, struct: AlgoTypes, 
-                max_steps=-1, verbose=0):
-    variables = get_SMK_V(n_attacker)
+                max_steps, verbose=0):
+
     data = {
-        "n_attacker": n_attacker,
+        "n_attacker": n,
+        "max_steps": max_steps,
         "beam_size": beam_size,
         "exhaustiveness": exh.value,
         "model": model.value,
@@ -31,28 +32,25 @@ def run_one_SMK(contexts, n_attacker, beam_size,
         u = u.tolist()
         # Adapt on the version of the SCM  
         if model == Models.BASE:
-                SCM = make_SCM(variables, u, SMK_model, n_attacker=n_attacker)
-                dag, init_var_ids = build_DAG(n_attacker, SCM["variables"])
+            scm = get_SMK_SCM(n, u)
         elif model == Models.NON_BOOLEAN:
-            SCM = get_mSMK_SCM(n_attacker, u)
-            dag, init_var_ids = build_DAG_non_boolean(n_attacker, SCM["variables"])
-        elif model == Models.NOISY:
-            SCM = get_nSMK_SCM(n_attacker, u)
+            scm = get_mSMK_SCM(n, u)
         elif model == Models.BLACK_BOX:
-            SCM = get_bbSMK_SCM(n_attacker, u)
-            dag = [[] for v in SCM["variables"]]
-            init_var_ids = range(len(SCM["variables"]))
+            scm = get_bbSMK_SCM(n, u)
+        else:
+            raise Exception(f"Model {model} not handled")
         # Adapt on algo type
         if struct == AlgoTypes.BASE:
             values, t = time_fn(
-                beam_search, **SCM, 
-                early_stop=early_stop, beam_size=beam_size, verbose=0
+                beam_search, **scm.get_input(), 
+                early_stop=early_stop, beam_size=beam_size, verbose=0,
+                max_iter=max_steps,
             )
         elif struct == AlgoTypes.STRUCTURED:
             values, t = time_fn(
-                iterative_identification, **SCM, 
-                dag=dag, init_var_ids=init_var_ids, 
-                early_stop=early_stop, beam_size=beam_size, verbose=0
+                iterative_identification, **scm.get_input(False),
+                early_stop=early_stop, beam_size=beam_size, verbose=0,
+                max_steps=max_steps,
             )
         
         states = [value[-1] for value in values]
@@ -70,8 +68,8 @@ def run_one_SMK(contexts, n_attacker, beam_size,
     return data
 
 def run_SMK(n_attackers, beam_sizes, 
-                 exh: Exhaustivness, model: Models, struct: AlgoTypes, 
-                 max_steps=-1, prefix=""):
+            exh: Exhaustivness, model: Models, struct: AlgoTypes,
+            max_steps, prefix=""):
     results = []
     all_contexts = {n_attacker: 
                 np.load(prefix+f"results/contexts/{n_attacker=}.npy")
@@ -81,52 +79,47 @@ def run_SMK(n_attackers, beam_sizes,
     print(f"  Version of SMK: {model.value}")
     print(f"  Algorithm used: {struct.value}")
     print(f"{n_attackers=} and {beam_sizes=}")
-    for n_attacker, beam_size in tqdm(list(product(n_attackers, beam_sizes))):
-        contexts = all_contexts[n_attacker]
-        data = run_one_SMK(contexts, n_attacker, beam_size, 
+    for n, beam_size in tqdm(list(product(n_attackers, beam_sizes))):
+        contexts = all_contexts[n]
+        data = run_one_SMK(contexts, n, beam_size, 
                            exh, model, struct,
                            max_steps, verbose=0)
         results.append(data)
     save_json(prefix+f"results/{model.value}-{exh.value}/{struct.value}.json", results)
 
 # === Noisy run ===
-def run_one_noisy_SMK(u, beam_size, algo, max_steps, lucb_params, seed, nl, do_lucb):
-    n_attacker = len(u) // 6
-    
-    N = lucb_params["max_iter"]
+def run_one_noisy_SMK(n, u, beam_size, algo, max_steps, lucb_params, seed, nl, do_lucb):
     eps = lucb_params["a"]
-    lucb_params = lucb_params | {"beam_size": beam_size} if do_lucb else None
+    lucb_params = lucb_params | {"beam_size": beam_size}
     lucb_params["lucb_info"] = []
-    SCM = get_nSMK_SCM(n_attacker, u, do_lucb=do_lucb, 
-                       N=N, nl=nl, lucb_params=lucb_params)
-    dag, init_var_ids = build_DAG(n_attacker, SCM["variables"])
+    
+    if do_lucb:
+        scm = get_lucb_nSMK_SCM(n, u, nl, lucb_params)
+    else:
+        scm = get_avg_nSMK_SCM(n, u, lucb_params["max_iter"], nl)
     np.random.seed(seed)
     if algo == AlgoTypes.BASE:
         values, t = time_fn(
             beam_search, 
-            **SCM, 
-            epsilon=eps,
-            early_stop=False, beam_size=beam_size, 
-            verbose=0
+            **scm.get_input(), 
+            epsilon=eps,beam_size=beam_size, 
+            max_steps=max_steps, verbose=0
         )
     else:
         values, t = time_fn(
             iterative_identification, 
-            **SCM, 
-            epsilon=eps,
-            dag=dag, init_var_ids=init_var_ids,
-            early_stop=False, beam_size=beam_size, 
-            verbose=0
+            **scm.get_input(False), 
+            epsilon=eps,beam_size=beam_size, 
+            max_steps=max_steps, verbose=0
         )
     
     states = [value[-1] for value in values]
     causes = [tuple(value[3]) for value in values]
-    s = SCM["instance"]
     return {
         "rules": serialize_rules(values),
         "causes": causes,
         "context": u,
-        "actual_state": s,
+        "actual_state": scm.v,
         "states": states,
         "time": t,
         "seed": seed,
@@ -145,12 +138,10 @@ def run_noisy_SMK(algo, n_attackers, beam_sizes, max_steps, lucb_params, n_seeds
     print(f"  Version of SMK: {Models.NOISY.value}")
     print(f"  Algorithm used: {algo.value} - {lucb_label}")
     print(f"{n_attackers=} and {beam_sizes=}")
-    for n_attacker, beam_size in tqdm(list(product(n_attackers, beam_sizes))):
-        contexts = all_contexts[n_attacker]
-        
-        variables = get_SMK_V(n_attacker)
+    for n, beam_size in tqdm(list(product(n_attackers, beam_sizes))):
+        contexts = all_contexts[n]
         data = {
-            "n_attacker": n_attacker,
+            "n_attacker": n,
             "beam_size": beam_size,
             "max_steps": max_steps,
             "exhaustiveness": Exhaustivness.FULL.value,
@@ -165,7 +156,7 @@ def run_noisy_SMK(algo, n_attackers, beam_sizes, max_steps, lucb_params, n_seeds
             u = u.tolist()
             for seed in range(n_seeds):
                 data["results"].append(
-                    run_one_noisy_SMK(u, beam_size, algo, max_steps, lucb_params, seed, nl, do_lucb)
+                    run_one_noisy_SMK(n, u, beam_size, algo, max_steps, lucb_params, seed, nl, do_lucb)
                 )
         results.append(data)
     save_json(
@@ -227,11 +218,11 @@ def run_ILP_SMK(n_attackers, prefix=""):
     model = Models.BASE
     exh = Exhaustivness.SMALLEST
     results = []
-    for n_attacker in n_attackers:
+    for n in n_attackers:
         contexts = np.load(prefix+f"results/contexts/{n_attacker=}.npy")
-        variables = get_SMK_V(n_attacker)[:-1]
+        variables = get_SMK_V(n)[:-1]
         data = {
-                "n_attacker": int(n_attacker),
+                "n_attacker": int(n),
                 "beam_size": None,
                 "exhaustiveness": exh.value,
                 "model": model.value,
@@ -240,9 +231,8 @@ def run_ILP_SMK(n_attackers, prefix=""):
             }
         for u in tqdm(contexts):
             u = [int(elt) for elt in u]
-            s = [0] * (len(variables)+1)
-            SMK_model(s, u, {}, n_attacker)
-            (C, W), t = time_fn(run_ilp_SMK,n_attacker, s, u, prefix=prefix)
+            s = SMK_model(u, {}, n)
+            (C, W), t = time_fn(run_ilp_SMK, n, s, u, prefix=prefix)
             data["results"].append({
                     "rules": serialize_symbols_values(C, W, s, variables),
                     "causes": serialize_symbols(C, variables),
@@ -256,13 +246,11 @@ def run_ILP_SMK(n_attackers, prefix=""):
     save_json(prefix+f"results/{model.value}-{exh.value}/ILP.json", results)
 
 # === Heuristics ===
-def simulate_SMK_heuristic(rules, u, n_attacker, instance, heuristic):
+def simulate_SMK_heuristic(rules, u, n, instance, heuristic):
     output = []
-    variables = get_SMK_V(n_attacker)
     for rule in rules:
         cf = dict(rule)
-        s = [0 for _ in variables]
-        SMK_model(s, u, cf, n_attacker)
+        s = SMK_model(u, cf, n_attacker)
         output.append((s, s[-1], heuristic(s)))
     return output
 
@@ -276,8 +264,8 @@ def get_heuristics(instance):
         "heuristic_const": lambda s: len(s)//2,
     }
 
-def get_simulation(u, n_attacker, instance, heuristic):
-    return lambda rules: simulate_SMK_heuristic(rules, u, n_attacker, instance, heuristic)
+def get_simulation(u, n, instance, heuristic):
+    return lambda rules: simulate_SMK_heuristic(rules, u, n, instance, heuristic)
 
 def evaluate_heuristics(n_attacker, N, measure, prefix=""):
     contexts = np.load(prefix+f"results/contexts/{n_attacker=}.npy")

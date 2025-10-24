@@ -576,10 +576,25 @@ def avg_nSMK_model(u, e, n, t, N):
         S += s
     return (S / N).tolist()
 
+def avg_nSMK_simulation(E, u, n, t, N, psi_v):
+    V = get_SMK_V(n)
+    out = []
+    for e in E:
+        Phi = 0
+        Psi = 0
+        for _ in range(N):
+            s = nSMK_model(u, e, n, t)
+            Phi += s[-1]
+            Psi += psi(s) > psi_v
+        out.append((None, Phi/N, Psi/N))
+    return out
+
 def get_avg_nSMK_SCM(n, u, N, nl):
     V = get_SMK_V(n)
     v = nSMK_model(u, [], n, t=0) # No noise for the instance
     t = nl/len(V) # Compute the noise threshold with the noise level
+    psi_v = psi(v)
+    
     return SCM(
         V=V,
         U=get_SMK_U(n),
@@ -589,16 +604,22 @@ def get_avg_nSMK_SCM(n, u, N, nl):
         psi=psi,
         dag=get_SMK_DAG(n),
         v=v,
+        # sim=lambda E: avg_nSMK_simulation(E, u, n, t, N, psi_v)
     )
     
-def get_lucb_nSMK_SCM(n, u, nl, lucb_params=None):
+def get_lucb_nSMK_SCM(n, u, nl, lucb_params):
     V = get_SMK_V(n)
     v = nSMK_model(u, [], n, t=0) # No noise for the instance
     t = nl/len(V) # Compute the noise threshold with the noise level
+    psi_v = psi(v)
     
     def lucb_evaluator(e):
         s = nSMK_model(u, e, n, t)
-        return s[-1], psi(s)/len(s)
+        # return s[-1], psi(s) > psi_v
+        return s[-1], psi(s)/len(s) 
+
+    # avg_v = np.mean([nSMK_model(u, [], n, t) for _ in range(lucb_params["max_iter"])], axis=0)
+    # estim_phi_correct = psi(avg_v)/len(avg_v) - psi(v)/len(v)
         
     return SCM(
         V=V,
@@ -608,6 +629,6 @@ def get_lucb_nSMK_SCM(n, u, nl, lucb_params=None):
         u=u,
         psi=psi,
         dag=get_SMK_DAG(n),
-        sim=lambda E: lucb(lucb_evaluator, E, **lucb_params),
+        sim=lambda E: lucb(lucb_evaluator, E, **lucb_params),#, estim_phi_correct=estim_phi_correct),
         v=v,
     )
