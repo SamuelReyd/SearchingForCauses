@@ -36,35 +36,15 @@ if __name__ == "__main__":
         run_SMK(n_attackers, [-1], Exhaustivness.EXACT, Models.BASE, AlgoTypes.STRUCTURED, max_steps=-1)
     
     # Main experiments - deterministic
-    # for exh, model, algo in exps:
-    #     if os.path.isfile(f"results/{model.value}-{exh.value}/{algo.value}.json"): 
-    #         continue
-    #     run_SMK(n_attackers, beam_sizes, exh, model, algo, max_steps)
-    #     print("Evaluation...")
-    #     evaluate_SMK(model, exh)
-    #     print()
+    for exh, model, algo in exps:
+        if os.path.isfile(f"results/{model.value}-{exh.value}/{algo.value}.json"): 
+            continue
+        run_SMK(n_attackers, beam_sizes, exh, model, algo, max_steps)
+    # print("Evaluation...")
+    # evaluate_SMK(model, exh)
+    print()
         
     # Main experiments - noisy
-    # exh = Exhaustivness.FULL
-    # model = Models.NOISY
-    # for algo in AlgoTypes:
-    #     for do_lucb in (True, False):
-    #         lucb_label = "lucb" if do_lucb else "naive"
-    #         if os.path.isfile(f"results/{model.value}-{exh.value}/{algo.value}-{lucb_label}.json"):
-    #             continue
-    #         params = base_params | {"do_lucb": do_lucb}
-    #         run_noisy_SMK(algo, n_attackers, beam_sizes, max_steps, noise_params)
-    # evaluate_noisy_SMK(prefix="")
-    
-    # Smallest identification
-    # for algo in AlgoTypes:
-    #     if os.path.isfile(f"results/base-smallest/{algo.value}.json"):
-    #         continue
-    #     run_SMK(n_attackers_smallest, beam_sizes_smallest, Exhaustivness.SMALLEST, Models.BASE, algo, max_steps=-1)
-    #     print()
-    # evaluate_SMK(Models.BASE, Exhaustivness.SMALLEST, prefix="")
-
-    # === Temporary: partial noisy
     exh = Exhaustivness.FULL
     model = Models.NOISY
     for algo in AlgoTypes:
@@ -72,9 +52,29 @@ if __name__ == "__main__":
             lucb_label = "lucb" if do_lucb else "naive"
             if os.path.isfile(f"results/{model.value}-{exh.value}/{algo.value}-{lucb_label}.json"):
                 continue
-            run_noisy_SMK(algo, (2,5), (12,25), max_steps, 
-                          lucb_params, n_seeds, nl, do_lucb)
-    evaluate_noisy_SMK(prefix="")
+            # params = base_params | {"do_lucb": do_lucb}
+            run_noisy_SMK(algo, n_attackers, beam_sizes, max_steps, lucb_params, n_seeds, nl, do_lucb)
+    # evaluate_noisy_SMK(prefix="")
+    
+    # Smallest identification
+    for algo in AlgoTypes:
+        if os.path.isfile(f"results/base-smallest/{algo.value}.json"):
+            continue
+        run_SMK(n_attackers_smallest, beam_sizes_smallest, Exhaustivness.SMALLEST, Models.BASE, algo, max_steps=-1)
+        print()
+    # evaluate_SMK(Models.BASE, Exhaustivness.SMALLEST, prefix="")
+
+    # === Temporary: partial noisy
+    # exh = Exhaustivness.FULL
+    # model = Models.NOISY
+    # for algo in AlgoTypes:
+    #     for do_lucb in (True, False):
+    #         lucb_label = "lucb" if do_lucb else "naive"
+    #         if os.path.isfile(f"results/{model.value}-{exh.value}/{algo.value}-{lucb_label}.json"):
+    #             continue
+    #         run_noisy_SMK(algo, (2,5), (12,25), max_steps, 
+    #                       lucb_params, n_seeds, nl, do_lucb)
+    # evaluate_noisy_SMK(prefix="")
 
     # == Depreciated ==
     # Noisy experiments

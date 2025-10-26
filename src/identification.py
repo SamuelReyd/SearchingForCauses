@@ -4,7 +4,7 @@ from tqdm import tqdm
 from itertools import product
 
 from binary_models import *
-from benchmark_models import SMK_model, get_SMK_V, get_mSMK_SCM, get_bbSMK_SCM, get_avg_nSMK_SCM, get_lucb_nSMK_SCM
+from benchmark_models import SMK_model, get_SMK_SCM, get_SMK_V, get_mSMK_SCM, get_bbSMK_SCM, get_avg_nSMK_SCM, get_lucb_nSMK_SCM
 # from actualcauses import beam_search, iterative_identification
 from actualcauses_local.base_algorithm import beam_search
 from actualcauses_local.iterative_subinstance_algorithm import iterative_identification
@@ -44,7 +44,7 @@ def run_one_SMK(contexts, n, beam_size,
             values, t = time_fn(
                 beam_search, **scm.get_input(), 
                 early_stop=early_stop, beam_size=beam_size, verbose=0,
-                max_iter=max_steps,
+                max_steps=max_steps,
             )
         elif struct == AlgoTypes.STRUCTURED:
             values, t = time_fn(
@@ -55,12 +55,11 @@ def run_one_SMK(contexts, n, beam_size,
         
         states = [value[-1] for value in values]
         causes = [tuple(value[3]) for value in values]
-        s = SCM["instance"]
         data["results"].append({
             "rules": serialize_rules(values),
             "causes": causes,
             "context": u,
-            "actual_state": s,
+            "actual_state": scm.v,
             "states": states,
             "time": t,
             "scores": [float(value[2]) for value in values]
