@@ -4,9 +4,12 @@ from tqdm import tqdm
 from collections import defaultdict
 
 from binary_models import *
+from general import Exhaustivness, Models, AlgoTypes
 from benchmark_models import SMK_model, get_SMK_V, get_bbSMK_SCM
 from benchmark_models import get_noisy_suzzy_SCM, get_avg_nSMK_SCM, get_lucb_nSMK_SCM
-from actualcauses import beam_search, iterative_identification
+# from actualcauses import beam_search, iterative_identification
+from actualcauses_local.base_algorithm import beam_search
+from actualcauses_local.iterative_subinstance_algorithm import iterative_identification
 
 # === General ===
 def filter_minimality(candidates):
@@ -111,10 +114,11 @@ def build_ref_causes_bb(data):
             context_repr = int("".join(map(str,res["context"])), 2)
             Cs = res["causes"]
             
-            SCM = get_bbSMK_SCM(n_attacker, res["context"])
+            scm = get_bbSMK_SCM(n_attacker, res["context"])
+            # print(scm.get_input().items())
             for C in Cs:
                 C_SCM = {}
-                for key, value in SCM.items():
+                for key, value in scm.get_input().items():
                     if key == "simulation":
                         C_SCM[key] = value
                     else:
@@ -239,3 +243,14 @@ def evaluate_ILP(prefix):
         datum["accuracy-avg"] = 1.0
         datum["accuracy-std"] = 0.0
     save_json(prefix+"results/base-smallest/ILP.json", data)
+
+
+if __name__ == "__main__":
+    print("Evaluation deterministic full")
+    # Evaluation determinist full
+    for model in (Models.BASE, Models.NON_BOOLEAN, Models.BLACK_BOX):
+        evaluate_SMK(model, Exhaustivness.FULL, prefix="")
+    # Evaluation noisy
+    # evaluate_SMK(model, Exhaustivness.FULL, prefix="")
+    # Evaluation smallest
+    # evaluate_SMK(Models.BASE, Exhaustivness.SMALLEST, prefix="")

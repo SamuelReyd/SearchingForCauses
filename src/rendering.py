@@ -130,35 +130,35 @@ def plot_distribution(metric, n_attacker, algo, exh, model, lucb_label, ax=None,
     ax.plot(X, np.mean(Y, axis=1), "x", c="black")
     ax.set_xticks(X, X_val)
 
-def plot_noisy_params(Ns, prefix="../"):
-    _, axes = plt.subplots(2,2, sharex=True)
-    plot_noisy_params_metric(Ns, "F1", AlgoTypes.BASE, axes[0,0], prefix)
-    plot_noisy_params_metric(Ns, "time", AlgoTypes.BASE, axes[1,0], prefix)
-    plot_noisy_params_metric(Ns, "F1", AlgoTypes.STRUCTURED, axes[0,1], prefix)
-    plot_noisy_params_metric(Ns, "time", AlgoTypes.STRUCTURED, axes[1,1], prefix)
-    axes[0,0].set_title("Base algo")
-    axes[0,1].set_title("Structured algo")
-    for i in range(2):
-        axes[1,i].set_xlabel("# sample per element")
-    axes[0,1].legend()
-    axes[0,0].set_ylabel("F1 score")
-    axes[1,0].set_ylabel("time (s)")
-    plt.tight_layout()
-    plt.savefig(prefix+"results/params.pdf")
-    plt.show()
+# def plot_noisy_params(Ns, prefix="../"):
+#     _, axes = plt.subplots(2,2, sharex=True)
+#     plot_noisy_params_metric(Ns, "F1", AlgoTypes.BASE, axes[0,0], prefix)
+#     plot_noisy_params_metric(Ns, "time", AlgoTypes.BASE, axes[1,0], prefix)
+#     plot_noisy_params_metric(Ns, "F1", AlgoTypes.STRUCTURED, axes[0,1], prefix)
+#     plot_noisy_params_metric(Ns, "time", AlgoTypes.STRUCTURED, axes[1,1], prefix)
+#     axes[0,0].set_title("Base algo")
+#     axes[0,1].set_title("Structured algo")
+#     for i in range(2):
+#         axes[1,i].set_xlabel("# sample per element")
+#     axes[0,1].legend()
+#     axes[0,0].set_ylabel("F1 score")
+#     axes[1,0].set_ylabel("time (s)")
+#     plt.tight_layout()
+#     plt.savefig(prefix+"results/params.pdf")
+#     plt.show()
 
-def plot_noisy_params_metric(Ns, metric, algo, ax, prefix="../"):
-    data = load_json(prefix+f"results/noisy-params/{algo.value}.json")
-    perfs = defaultdict(lambda: np.zeros(len(Ns)))
-    stds = defaultdict(lambda: np.zeros(len(Ns)))
-    for datum in data:
-        key = (datum['do_lucb'],datum['batch_size'])
-        perfs[key][Ns.index(datum["N"])] = datum[f"{metric}-avg"]
-        stds[key][Ns.index(datum["N"])] = datum[f"{metric}-std"]
-    for key, value in perfs.items():
-        label = f"batch size={key[1]}" if key[0] else "naive"
-        ax.errorbar(Ns, value, yerr=stds[key], label=label, capsize=2, marker="x",elinewidth=1)
-    ax.set_xticks(Ns)
+# def plot_noisy_params_metric(Ns, metric, algo, ax, prefix="../"):
+#     data = load_json(prefix+f"results/noisy-params/{algo.value}.json")
+#     perfs = defaultdict(lambda: np.zeros(len(Ns)))
+#     stds = defaultdict(lambda: np.zeros(len(Ns)))
+#     for datum in data:
+#         key = (datum['do_lucb'],datum['batch_size'])
+#         perfs[key][Ns.index(datum["N"])] = datum[f"{metric}-avg"]
+#         stds[key][Ns.index(datum["N"])] = datum[f"{metric}-std"]
+#     for key, value in perfs.items():
+#         label = f"batch size={key[1]}" if key[0] else "naive"
+#         ax.errorbar(Ns, value, yerr=stds[key], label=label, capsize=2, marker="x",elinewidth=1)
+#     ax.set_xticks(Ns)
 
 def gather_data_smallest(prefix, algos, metrics, n_attackers, beam_sizes):
     all_perfs = {}
