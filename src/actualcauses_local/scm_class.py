@@ -90,7 +90,7 @@ class SCM:
         if base:
             return self.get_input_beam_search()
         assert self.dag is not None
-        return self.get_input_beam_search() | {"dag": self.dag, "init_var_ids":self.init_vars}
+        return self.get_input_beam_search() | {"dag": self.dag, "PA_T":self.init_vars}
 
     def get_input_beam_search(self):
         return {"v": self.v[:-1], "V": self.V[:-1], "D": self.D[:-1], "simulation": self.apply_interventions}

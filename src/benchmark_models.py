@@ -20,11 +20,11 @@ def rock_throwing_model(u: list, e:list[list]):
     s = [None] * len(suzzy_vars)
     e = dict(e)
     ST, BT, SH, BH, BS = range(len(suzzy_vars))
-    s[ST] = e.get(ST, u[0])
-    s[BT] = e.get(BT, u[1])
-    s[SH] = e.get(SH, s[ST])
-    s[BH] = e.get(BH, int(s[BT] and not s[SH]))
-    s[BS] = e.get(BS, int(s[BH] or s[SH]))
+    s[ST] = e.get("ST", u[0])
+    s[BT] = e.get("BT", u[1])
+    s[SH] = e.get("SH", s[ST])
+    s[BH] = e.get("BH", int(s[BT] and not s[SH]))
+    s[BS] = e.get("BS", int(s[BH] or s[SH]))
     return s
 
 scm_suzzy = SCM(
@@ -184,6 +184,8 @@ def get_SMK_U(n):
     return [
         f"{dim}-U{i}" for dim in smk_base_vars_exo for i in range(1,n+1)
     ]
+        
+    
 
 def SMK_model(u:list, e:list[list], n:int):
     """
@@ -199,28 +201,28 @@ def SMK_model(u:list, e:list[list], n:int):
     for i in range(1,n+1):
         for dim in ("FS", "FN", "FF", "FDB", "A", "AD"):
             dim_id = dim2id[f"{dim}-U{i}"]
-            s[dim_id] = e.get(dim_id, u[dim_id])
+            s[dim_id] = e.get(f"{dim}-U{i}", u[dim_id])
     # Set depth-1
     for i in range(1,n+1):
         # Set GP
         s[dim2id[f"GP-U{i}"]] = e.get(
-            dim2id[f"GP-U{i}"], 
+            f"GP-U{i}", 
             int(s[dim2id[f"FS-U{i}"]] or s[dim2id[f"FN-U{i}"]]) 
         )
         # Set GK
         s[dim2id[f"GK-U{i}"]] = e.get(
-            dim2id[f"GK-U{i}"], 
+            f"GK-U{i}", 
             int(s[dim2id[f"FF-U{i}"]] or s[dim2id[f"FDB-U{i}"]])
         )
         # Set KMS
         s[dim2id[f"KMS-U{i}"]] = e.get(
-            dim2id[f"KMS-U{i}"], 
+            f"KMS-U{i}", 
             int(s[dim2id[f"A-U{i}"]] and s[dim2id[f"AD-U{i}"]])
         )
     # Set DK
     for i in range(1,n+1):
         s[dim2id[f"DK-U{i}"]] = e.get(
-            dim2id[f"DK-U{i}"], 
+            f"DK-U{i}", 
             int(s[dim2id[f"GP-U{i}"]] and \
             s[dim2id[f"GK-U{i}"]] and \
             not any([s[dim2id[f"DK-U{j}"]] for j in range(1, i)]))
@@ -228,23 +230,23 @@ def SMK_model(u:list, e:list[list], n:int):
     # Set SD
     for i in range(1, n+1):
         s[dim2id[f"SD-U{i}"]] = e.get(
-            dim2id[f"SD-U{i}"], 
+            f"SD-U{i}", 
             int(s[dim2id[f"KMS-U{i}"]] and \
             not any([s[dim2id[f"SD-U{j}"]] for j in range(1,i)]))
         )
     # Set global DK
     s[dim2id["DK"]] = e.get(
-        dim2id["DK"], 
+        "DK", 
         int(any([s[dim2id[f"DK-U{i}"]] for i in range(1,n+1)]))
     )
     # Set global SD
     s[dim2id["SD"]] = e.get(
-        dim2id["SD"], 
+        "SD", 
         int(any([s[dim2id[f"SD-U{i}"]] for i in range(1,n+1)]))
     )
     # Set SMK
     s[dim2id["SMK"]] = e.get(
-        dim2id["SMK"], 
+        "SMK", 
         int(s[dim2id["DK"]] or s[dim2id["SD"]])
     )
 
@@ -509,6 +511,49 @@ def get_noisy_suzzy_SCM(u, t, lucb_params):
         sim=lambda E: lucb(evaluator, E, **lucb_params)
     )
 
+def set_value_vect(s, var_id, compute_value, e, t):
+    if var_id not in e:
+        s[:,var_id] = compute_value(s)
+        ids = np.random.rand(s.shape[0]) < t
+        s[ids,var_id] = 1 - s[ids,var_id]
+    else:
+        s[:,var_id] = e[var_id]
+
+def elementwise_any(list_of_arrays):
+    if not len(list_of_arrays):
+        return np.False_
+    return np.any(np.stack(list_of_arrays), axis=0)
+
+def nSMK_model_vectorized(u, e, N, n, t):
+    V = get_SMK_V(n)
+    e = dict(e)
+    dim2id = dict(zip(V, range(len(V))))
+    s = np.zeros((N, len(V)), dtype=int)
+    # Set variables from exo source
+    for i in range(1,n+1):
+        for dim in ("FS", "FN", "FF", "FDB", "A", "AD"):
+            dim_id = dim2id[f"{dim}-U{i}"]
+            s[:,dim_id] = e.get(dim_id, u[dim_id])
+    # Set depth-1
+    for i in range(1,n+1):
+        set_value_vect(s, dim2id[f"GP-U{i}"], lambda s: s[:,dim2id[f"FS-U{i}"]] | s[:,dim2id[f"FN-U{i}"]], e, t)
+        set_value_vect(s, dim2id[f"GK-U{i}"], lambda s: s[:,dim2id[f"FF-U{i}"]] | s[:,dim2id[f"FDB-U{i}"]], e, t)
+        set_value_vect(s, dim2id[f"KMS-U{i}"], lambda s: s[:,dim2id[f"A-U{i}"]] & s[:,dim2id[f"AD-U{i}"]], e, t)
+    # Set DK
+    for i in range(1,n+1):
+        block = elementwise_any([s[:,dim2id[f"DK-U{j}"]] for j in range(1, i)])
+        set_value_vect(s, dim2id[f"DK-U{i}"], lambda s: s[:,dim2id[f"GP-U{i}"]] & s[:,dim2id[f"GK-U{i}"]] & ~block, e, t)
+    # Set SD
+    for i in range(1, n+1):
+        block = elementwise_any([s[:,dim2id[f"SD-U{j}"]] for j in range(1,i)])
+        set_value_vect(s, dim2id[f"SD-U{i}"], lambda s: s[:,dim2id[f"KMS-U{i}"]] & ~block, e, t)
+        
+    set_value_vect(s, dim2id["DK"], lambda s: elementwise_any([s[:,dim2id[f"DK-U{i}"]] for i in range(1,n+1)]), e, t)
+    set_value_vect(s, dim2id["SD"], lambda s: elementwise_any([s[:,dim2id[f"SD-U{i}"]] for i in range(1,n+1)]), e, t)
+    set_value_vect(s, dim2id["SMK"], lambda s: s[:,dim2id["SD"]] | s[:,dim2id["DK"]], e, t)
+    return s
+
+
 def nSMK_model(u, e, n, t):
     V = get_SMK_V(n)
     e = dict(e)
@@ -570,24 +615,27 @@ def nSMK_model(u, e, n, t):
 
 def avg_nSMK_model(u, e, n, t, N):
     V = get_SMK_V(n)
-    S = np.zeros(len(V))
-    for _ in range(N):
-        s = nSMK_model(u, e, n, t)
-        S += s
+    S = nSMK_model_vectorized(u, e, N, n, t)
+    S = S.sum(axis=0)    
+    
+    # S = np.zeros(len(V))
+    # for _ in range(N):
+    #     s = nSMK_model(u, e, n, t)
+    #     S += s
     return (S / N).tolist()
 
-def avg_nSMK_simulation(E, u, n, t, N, psi_v):
-    V = get_SMK_V(n)
-    out = []
-    for e in E:
-        Phi = 0
-        Psi = 0
-        for _ in range(N):
-            s = nSMK_model(u, e, n, t)
-            Phi += s[-1]
-            Psi += psi(s) > psi_v
-        out.append((None, Phi/N, Psi/N))
-    return out
+# def avg_nSMK_simulation(E, u, n, t, N, psi_v):
+#     V = get_SMK_V(n)
+#     out = []
+#     for e in E:
+#         Phi = 0
+#         Psi = 0
+#         for _ in range(N):
+#             s = nSMK_model(u, e, n, t)
+#             Phi += s[-1]
+#             Psi += psi(s) > psi_v
+#         out.append((None, Phi/N, Psi/N))
+#     return out
 
 def get_avg_nSMK_SCM(n, u, N, nl):
     V = get_SMK_V(n)
@@ -606,20 +654,24 @@ def get_avg_nSMK_SCM(n, u, N, nl):
         v=v,
         # sim=lambda E: avg_nSMK_simulation(E, u, n, t, N, psi_v)
     )
+
+def logistic(p, a=10):
+    return 1 / (1 + np.exp(-a * (p - 0.5)))
     
 def get_lucb_nSMK_SCM(n, u, nl, lucb_params):
     V = get_SMK_V(n)
     v = nSMK_model(u, [], n, t=0) # No noise for the instance
     t = nl/len(V) # Compute the noise threshold with the noise level
-    psi_v = psi(v)
     
-    def lucb_evaluator(e):
-        s = nSMK_model(u, e, n, t)
-        # return s[-1], psi(s) > psi_v
-        return s[-1], psi(s)/len(s) 
+    # def lucb_evaluator(e):
+    #     s = nSMK_model(u, e, n, t)
+    #     return s[-1], psi(s)/len(s) 
 
-    # avg_v = np.mean([nSMK_model(u, [], n, t) for _ in range(lucb_params["max_iter"])], axis=0)
-    # estim_phi_correct = psi(avg_v)/len(avg_v) - psi(v)/len(v)
+    def lucb_evaluator(e, N):
+        S = nSMK_model_vectorized(u, e, N, n, t)
+        phi_values = S[:,-1]
+        psi_values = logistic((S.sum(axis=1)-1) / S.shape[1])
+        return np.stack([phi_values, psi_values]).T
         
     return SCM(
         V=V,
