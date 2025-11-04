@@ -83,15 +83,13 @@ compute_beta = compute_beta_usable
 
 
 def lucb(evaluator, rules, beam_size, a=.05, beam_eps=.1, cause_eps=.01, non_cause_eps=.01, 
-         max_iter=200, verbose=0, batch_size=10, init_batch_size=20, lucb_info=None):#, estim_phi_correct=0):
+         max_iter=200, verbose=0, batch_size=10, init_batch_size=20, lucb_info=None):
 
     init_batch_size = max(1, init_batch_size)
     n_arms = len(rules) # Doing armed bandits with the rules to evaluate
 
     n_stats = 9
-    # n_stats = 7
     phi_m, phi_ub, phi_lb, psi_m, psi_v, psi_M2, psi_ub, psi_lb, n = range(n_stats)
-    # phi_m, phi_ub, phi_lb, psi_m, psi_ub, psi_lb, n = range(n_stats)
     stats = np.zeros((n_stats,n_arms), dtype=float) 
     stats[phi_ub] = 1.0
     stats[psi_ub] = 1.0
@@ -100,25 +98,25 @@ def lucb(evaluator, rules, beam_size, a=.05, beam_eps=.1, cause_eps=.01, non_cau
     beta_psi = 0
     
     # Utils function
-    def action_arm(arm, bs=batch_size):
+    def action_arms(arms, bs=batch_size):
         # Compute values
-        # values_batch = np.array([evaluator(rules[arm]) for _ in range(bs)]) # pairs (phi, psi)
-        values_batch = evaluator(rules[arm], bs)
-        # Update n 
-        n_old = stats[n,arm]
-        stats[n,arm] += bs
-        # Compute batch stats
-        mean_batch = np.mean(values_batch, axis=0)
-        M2_batch = np.sum((values_batch[:,1] - mean_batch[1])**2) # Compute M2 only for psi
-        # Update phi
-        # print(f"{mean_batch[0]=:.2f}, {stats[phi_m, arm]=:.2f}, {bs / stats[n,arm]=:.2f}")
-        stats[phi_m,arm] += (mean_batch[0] - stats[phi_m, arm]) * bs / stats[n,arm]
-        # Update psi
-        stats[psi_m,arm] += (mean_batch[1] - stats[psi_m, arm]) * bs / stats[n,arm]
-        delta = mean_batch[1] - stats[psi_m, arm]
-        stats[psi_m,arm] += delta * bs / stats[n,arm]
-        stats[psi_M2,arm] += M2_batch + delta**2 * n_old * bs / stats[n,arm]
-        stats[psi_v,arm] = stats[psi_M2,arm] / stats[n,arm]
+        E = [rules[arm] for arm in arms]
+        values_batchs = evaluator(E, bs)
+        for arm, values_batch in zip(arms, values_batchs):
+            # Update n 
+            n_old = stats[n,arm]
+            stats[n,arm] += bs
+            # Compute batch stats
+            mean_batch = np.mean(values_batch, axis=0)
+            M2_batch = np.sum((values_batch[:,1] - mean_batch[1])**2) # Compute M2 only for psi
+            # Update phi
+            stats[phi_m,arm] += (mean_batch[0] - stats[phi_m, arm]) * bs / stats[n,arm]
+            # Update psi
+            stats[psi_m,arm] += (mean_batch[1] - stats[psi_m, arm]) * bs / stats[n,arm]
+            delta = mean_batch[1] - stats[psi_m, arm]
+            stats[psi_m,arm] += delta * bs / stats[n,arm]
+            stats[psi_M2,arm] += M2_batch + delta**2 * n_old * bs / stats[n,arm]
+            stats[psi_v,arm] = stats[psi_M2,arm] / stats[n,arm]
 
     
     def update_bounds_beam(t):
@@ -130,13 +128,8 @@ def lucb(evaluator, rules, beam_size, a=.05, beam_eps=.1, cause_eps=.01, non_cau
         non_beam_ids = sorted_non_cause_ids[beam_size:]
         if not beam_ids.size or not non_beam_ids.size: return 0
 
-        # For the arms suspected to be in the beam: update upper bound
         stats[psi_ub,beam_ids] = bernstein_upper_bound(stats[psi_m,beam_ids], stats[psi_v,beam_ids], stats[n,beam_ids], beta_psi)
-        # stats[psi_ub,beam_ids] = hoeffding_upper_bound(stats[psi_m,beam_ids], stats[n,beam_ids], beta_psi)
-        
-        # For the arms suspected not to be in the beam: update lower bound
         stats[psi_lb,non_beam_ids] = bernstein_lower_bound(stats[psi_m,non_beam_ids], stats[psi_v,non_beam_ids], stats[n,non_beam_ids], beta_psi)
-        # stats[psi_lb,non_beam_ids] = hoeffding_lower_bound(stats[psi_m,non_beam_ids], stats[n,non_beam_ids], beta_psi)
 
         # Compute the id of the higher upper bound of the candidate beams
         #  + the id of the smallest lower bound of the candidate non-beam
@@ -155,8 +148,7 @@ def lucb(evaluator, rules, beam_size, a=.05, beam_eps=.1, cause_eps=.01, non_cau
 
         # Merge arms to pull
         pull_ids = np.unique(np.concatenate([beam_to_pull, nonbeam_to_pull]))
-        for i in pull_ids:
-            action_arm(i)
+        action_arms(pull_ids)
         
         return stats[psi_ub,ut] - stats[psi_lb,lt]
 
@@ -166,8 +158,7 @@ def lucb(evaluator, rules, beam_size, a=.05, beam_eps=.1, cause_eps=.01, non_cau
         stats[phi_lb,ids] = dlow_bernoulli(stats[phi_m,ids], stats[n,ids], beta_phi)
         lt = ids[np.argmin(stats[phi_lb,ids])]
         pull_ids = ids[stats[phi_lb, ids] <= a + non_cause_bound]
-        for i in pull_ids:
-            action_arm(i)
+        action_arms(pull_ids)
         return a - stats[phi_lb,lt]
 
     def update_bounds_cause(t):
@@ -176,8 +167,7 @@ def lucb(evaluator, rules, beam_size, a=.05, beam_eps=.1, cause_eps=.01, non_cau
         stats[phi_ub,ids] = dup_bernoulli(stats[phi_m,ids], stats[n,ids], beta_phi)
         ut = ids[np.argmax(stats[phi_ub,ids])]
         pull_ids = ids[stats[phi_ub, ids] >= a - cause_bound]
-        for i in pull_ids:
-            action_arm(i)
+        action_arms(pull_ids)
         return stats[phi_ub,ut] - a
     
     # Initialization
@@ -185,8 +175,7 @@ def lucb(evaluator, rules, beam_size, a=.05, beam_eps=.1, cause_eps=.01, non_cau
     cause_bound = 1
     non_cause_bound = 1
 
-    for arm in tqdm(range(n_arms), disable=not verbose):
-        action_arm(arm, init_batch_size)
+    action_arms(list(range(n_arms)), init_batch_size)
     it = 1
     # Loop
     with tqdm(total=n_arms * max_iter, disable=not verbose) as pbar:

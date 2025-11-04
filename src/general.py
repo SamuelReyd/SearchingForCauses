@@ -64,7 +64,7 @@ def serialize_rules(rule_values):
             if isinstance(value, Iterable):
                 value = [float(v) for v in value]
             else: value = float(value)
-            s_rule.append([int(dim), value])
+            s_rule.append([dim, value])
         rules.append(s_rule)
     return rules
 

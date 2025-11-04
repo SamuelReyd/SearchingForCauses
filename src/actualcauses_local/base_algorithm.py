@@ -145,6 +145,22 @@ def check_early_stop(beams, early_stop, all_causes, max_time, init_time):
     if max_time is not None and time.time()-init_time > max_time: return True
     return False
 
+def do_simulation(simulation, cache, beams):
+    if cache is None: return simulation(beams)
+    cached_results = []
+    non_cached_beams = []
+    # print(f"{beams=}")
+    # print(f"{cache=}")
+    for e in beams:
+        if e in cache:
+            cached_results.append(cache[e])
+        else:
+            non_cached_beams.append(e)
+    # print(len(cached_results))
+    cf_values = simulation(non_cached_beams)
+    cache |= dict(zip(non_cached_beams, cf_values))
+    return cached_results + cf_values
+
 def beam_search(
     v, D, simulation, V, # SCM
     max_steps=5, beam_size=10, epsilon=.05, early_stop=False, max_time=None, # Parameters
@@ -181,7 +197,8 @@ def beam_search(
         # Evaluate the rules using the simulation 
         if W_R:
             beams = [beam + W_R for beam in beams]
-        cf_values = simulation(beams)
+                
+        cf_values = do_simulation(simulation, cache, beams)
         
         # Build the tuples of rule values
         causes, non_causes = split_rules(beams, cf_values, actual_values, epsilon)

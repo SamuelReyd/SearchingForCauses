@@ -1,5 +1,7 @@
 from collections.abc import Iterable
-from .base_algorithm import beam_search
+import time
+from .base_algorithm import beam_search, show_rules
+from .iterative_subinstance_algorithm import iterative_identification
 
 class SCM:
     def __init__(self, V:list, U:list, D:list[list], F:callable, u:list, 
@@ -38,12 +40,14 @@ class SCM:
         self.init_vars = dag[V[-1]] if dag is not None else None
         self.sim = sim
         if v is None:
-            self.v = self.apply_intervention([])
+            self.v = self.apply_intervention({})
         else:
             self.v = v
         self.causes = None
+        self.witnesses = None
         self.identification_output = None
         self.interventions = None
+        self.identification_time = None
         
 
     def apply_intervention(self, e):
@@ -95,16 +99,18 @@ class SCM:
     def get_input_beam_search(self):
         return {"v": self.v[:-1], "V": self.V[:-1], "D": self.D[:-1], "simulation": self.apply_interventions}
 
-    def find_causes(self, max_steps=5, beam_size=10, epsilon=.05, early_stop=False, max_time=None, # Parameters
-                    var_mapping=None, ref_w=tuple(), Cs=None, # Additional parameters when running for sub-instance
-                    verbose=0, output_info=True):
-        out = beam_search(**self.get_input(), max_steps=max_steps, beam_size=beam_size, 
-                          epsilon=epsilon, early_stop=early_stop, 
-                          max_time=max_time, # Parameters
-                          var_mapping=var_mapping, ref_w=ref_w, Cs=Cs, # Additional parameters when running for sub-instance
-                          verbose=verbose, output_info=output_info)
+    def find_causes(self, ISI=False, **kwargs):
+        t = time.time()
+        if ISI:
+            out = iterative_identification(**self.get_input(False), **kwargs)
+        else:
+            out = beam_search(**self.get_input(), **kwargs)
+        self.identification_time = time.time() - t
         self.identification_output = out
         self.causes = [elt[3] for elt in out]
+        self.witnesses = [elt[4] for elt in out]
         self.interventions = [elt[0] for elt in out]
         
-        
+    def show_indentification_result(self):
+        print(f"Identification time: {self.identification_time:.3f}s\n")
+        show_rules(self.identification_output)
