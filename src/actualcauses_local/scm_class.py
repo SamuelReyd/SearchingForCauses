@@ -35,7 +35,7 @@ class SCM:
         self.u = u
         self.psi = psi
         self.dag = dag
-        self.init_vars = dag[-1] if dag is not None else None
+        self.init_vars = dag[V[-1]] if dag is not None else None
         self.sim = sim
         if v is None:
             self.v = self.apply_intervention([])
@@ -55,14 +55,14 @@ class SCM:
             return self.F(self.u, e) # F returns the state
         return self.sim([e])[0][0] # sim returns [(state, phi, psi)]
 
-    def apply_dict(self, d):
-        """
-        Input: one intervention {variable:value,...}
-        Output: value of phi(e)
-        """
-        # Working function to try interventions manually
-        e = [(self.V.index(var), value) for var, value in d.items()]
-        return self.apply_intervention(e)
+    # def apply_dict(self, d):
+    #     """
+    #     Input: one intervention {variable:value,...}
+    #     Output: value of phi(e)
+    #     """
+    #     # Working function to try interventions manually
+    #     e = [(self.V.index(var), value) for var, value in d.items()]
+    #     return self.apply_intervention(e)
     
     def phi(self, e):
         """

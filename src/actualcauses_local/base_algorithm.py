@@ -21,15 +21,6 @@ def render_step(verbose, causes, non_causes):
         if verbose >= 2:
             print("No rule available")
 
-def render_time(time):
-    n_hours = time//(60*60)
-    ret = ""
-    if int(n_hours): ret += f"{n_hours:.0f}h"
-    if int(n_hours) or int((time%3600)//60): ret += f"{(time%3600)//60:.0f}min"
-    if not int(n_hours): ret += f"{time%60:.0f}s"
-    if not (int(n_hours) or int((time%3600)//60)): ret += f"{(time-int(time))*100:.0f}ms"
-    return ret
-
 def get_sets(rule, actual_values):
     C = set()
     W = set()
@@ -95,12 +86,11 @@ def get_initial_rules(V, D, v):
                 rules.append(((feature, value),))
     return rules
 
-def get_rules(previous_rules, V, D, v, Cs, verbose=False):
+def get_rules(previous_rules, V, D, v, Cs, actual_values, verbose=False):
     # Build new rules on top of the previous ones
     # The previous rules are not valid (i.d. they do not define causes)
     if previous_rules is None: return get_initial_rules(V, D, v)
     new_rules = set()
-    actual_values = dict(zip(V,v))
 
     # Iterate through the previous rules
     for rule in tqdm(previous_rules, disable=not verbose): # Complexity: O(1)
@@ -155,18 +145,11 @@ def check_early_stop(beams, early_stop, all_causes, max_time, init_time):
     if max_time is not None and time.time()-init_time > max_time: return True
     return False
 
-def map_beams(beams, var_mapping, W_R):
-    if var_mapping is None:
-        return beams
-    sim_beams = [tuple([(var_mapping[var], value) for var, value in beam]) for beam in beams]
-    sim_beams = [beam + W_R for beam in sim_beams]
-    return sim_beams
-
 def beam_search(
     v, D, simulation, V, # SCM
     max_steps=5, beam_size=10, epsilon=.05, early_stop=False, max_time=None, # Parameters
-    var_mapping=None, W_R=tuple(), Cs=None, # Additional parameters when running for sub-instance
-    verbose=0, cache=None, minimality=True,
+    W_R=None, Cs=None, cache=None, minimality=True, # Additional parameters when running for sub-instance
+    verbose=0, 
     ):
     # verbose: 
     #  = 1 -> best cause at the end, tqdm for steps
@@ -174,7 +157,8 @@ def beam_search(
     #  >= 3 -> adds all causes + tqdm for get_rules
     
     all_causes = []
-    actual_values = dict(zip(V, v))
+    if W_R is None: W_R = tuple()
+    actual_values = dict(zip(V, v)) | dict(W_R)
     init_time = time.time()
     if Cs is None: Cs = []
     if max_steps == -1 or max_steps is None: iterator = count(start=1, step=1)
@@ -185,7 +169,7 @@ def beam_search(
         if verbose >= 2: print(f"{f'Step {t}':=^30}")
             
         # Create the rules for step t base on the ones from t-1, we use the initial ones if t==1
-        beams = get_rules(beams if t > 1 else None, V, D, v, Cs, verbose >= 3)
+        beams = get_rules(beams if t > 1 else None, V, D, v, Cs, actual_values, verbose >= 3)
 
         # Check for early stop
         if check_early_stop(beams, early_stop, all_causes, max_time, init_time):
@@ -193,10 +177,11 @@ def beam_search(
             
         # Render how many nodes will be evaluated
         if verbose >= 2: print(f"Evaluating {len(beams)} rules")
-            
+
         # Evaluate the rules using the simulation 
-        sim_beams = map_beams(beams, var_mapping, W_R)
-        cf_values = simulation(sim_beams)
+        if W_R:
+            beams = [beam + W_R for beam in beams]
+        cf_values = simulation(beams)
         
         # Build the tuples of rule values
         causes, non_causes = split_rules(beams, cf_values, actual_values, epsilon)
@@ -207,19 +192,16 @@ def beam_search(
         for rule_value in causes:
             Cs.append(rule_value[3])
 
-        ### Build next beams
+        # Build next beams
         beams = get_next_beams(non_causes, beam_size, Cs)
         
         # Render step output
         render_step(verbose, causes, non_causes)
 
-    # Sort final rule set
-    all_causes.sort(key=sort_key)
-
     # Render final result
     if verbose:
         print(f"----> Found {len(all_causes)} causes.")
-        if all_causes:
-            print(f"{'Overall best rule:':=^30}")
-            show_rule(all_causes[0])
+        # if all_causes:
+        #     print(f"{'Overall best rule:':=^30}")
+        #     show_rule(all_causes[0])
     return all_causes

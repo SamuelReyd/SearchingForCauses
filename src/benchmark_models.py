@@ -11,7 +11,8 @@ psi = lambda s: sum(s)-1
 
 """Rock Throwing"""
 suzzy_vars = ["ST","BT","SH","BH","BS"]
-suzzy_dag = [[],[],[0],[1,2],[2,3]]
+suzzy_dag = {"ST":[],"BT":[],"SH":["ST"],"BH":["BT","SH"],"BS":["BH","SH"]}
+# suzzy_dag = [[],[],[0],[1,2],[2,3]]
 def rock_throwing_model(u: list, e:list[list]):
     """
     u: exogenous values
@@ -258,17 +259,17 @@ def get_SMK_DAG(n:int):
         n[int]: number of attackers
     """
     V = get_SMK_V(n)
-    dag = [[] for v in V]
+    dag = {v:[] for v in V}
     var2int = {v: i for i,v in enumerate(V)}
     for n in range(1,n+1):
-        dag[var2int[f'GP-U{n}']] += [var2int[f'FS-U{n}'], var2int[f'FN-U{n}']]
-        dag[var2int[f'GK-U{n}']] += [var2int[f'FF-U{n}'], var2int[f'FDB-U{n}']]
-        dag[var2int[f'KMS-U{n}']] += [var2int[f'A-U{n}'], var2int[f'AD-U{n}']]
-        dag[var2int[f'DK-U{n}']] += [var2int[f'GP-U{n}'], var2int[f'GK-U{n}']] + [var2int[f'DK-U{j}'] for j in range(1, n)]
-        dag[var2int[f'SD-U{n}']] += [var2int[f'KMS-U{n}']] + [var2int[f'SD-U{j}'] for j in range(1, n)]
-        dag[var2int['DK']] += [var2int[f'DK-U{n}']]
-        dag[var2int['SD']] += [var2int[f'SD-U{n}']]
-    dag[var2int["SMK"]] += [var2int["SD"], var2int["DK"]]
+        dag[f'GP-U{n}'] += [f'FS-U{n}', f'FN-U{n}']
+        dag[f'GK-U{n}'] += [f'FF-U{n}', f'FDB-U{n}']
+        dag[f'KMS-U{n}'] += [f'A-U{n}', f'AD-U{n}']
+        dag[f'DK-U{n}'] += [f'GP-U{n}', f'GK-U{n}'] + [f'DK-U{j}' for j in range(1, n)]
+        dag[f'SD-U{n}'] += [f'KMS-U{n}'] + [f'SD-U{j}' for j in range(1, n)]
+        dag['DK'] += [f'DK-U{n}']
+        dag['SD'] += [f'SD-U{n}']
+    dag["SMK"] += ["SD", "DK"]
     return dag
 
 def get_SMK_SCM(n:int, u:list):
@@ -376,26 +377,26 @@ def mSMK_model(u, e, n):
     labels = ("FS", "FN", "FF", "FDB", "A", "AD")
     for i, label in enumerate(labels):
         dim_id = dim2id[label]
-        s[dim_id] = e.get(dim_id, tuple([j for j in range(n) if u[i * n + j]]))
+        s[dim_id] = e.get(label, tuple([j for j in range(n) if u[i * n + j]]))
     
     # Set KMS
-    s[dim2id["KMS"]] = e.get(dim2id["KMS"], tuple(set(s[dim2id["A"]]) & set(s[dim2id["AD"]])))
+    s[dim2id["KMS"]] = e.get("KMS", tuple(set(s[dim2id["A"]]) & set(s[dim2id["AD"]])))
     
     # Set SD
-    s[dim2id["SD"]] = e.get(dim2id["SD"], min(s[dim2id["KMS"]]) if s[dim2id["KMS"]] else -1)
+    s[dim2id["SD"]] = e.get("SD", min(s[dim2id["KMS"]]) if s[dim2id["KMS"]] else -1)
 
     # Set GK 
-    s[dim2id["GK"]] = e.get(dim2id["GK"], tuple(set(s[dim2id["FF"]]) | set(s[dim2id["FDB"]])))
+    s[dim2id["GK"]] = e.get("GK", tuple(set(s[dim2id["FF"]]) | set(s[dim2id["FDB"]])))
     
     # Set GP
-    s[dim2id["GP"]] = e.get(dim2id["GP"], tuple(set(s[dim2id["FS"]]) | set(s[dim2id["FN"]])))
+    s[dim2id["GP"]] = e.get("GP", tuple(set(s[dim2id["FS"]]) | set(s[dim2id["FN"]])))
 
     # Set DK
     children = tuple(set(s[dim2id["GP"]]) & set(s[dim2id["GK"]]))
-    s[dim2id["DK"]] = e.get(dim2id["DK"], min(children) if children else -1)
+    s[dim2id["DK"]] = e.get("DK", min(children) if children else -1)
     
     # Set SMK
-    s[dim2id["SMK"]] = e.get(dim2id["SMK"], int(s[dim2id["DK"]] > -1 or s[dim2id["SD"]] > -1))
+    s[dim2id["SMK"]] = e.get("SMK", int(s[dim2id["DK"]] > -1 or s[dim2id["SD"]] > -1))
     return s
 
 def get_mSMK_domains(n):
@@ -415,14 +416,13 @@ def mSMK_heuristic(s):
     )
 
 def get_mSMK_DAG():
-    dag = [[] for v in mSMK_variables]
-    var2int = {v: i for i,v in enumerate(mSMK_variables)}
-    dag[var2int['GP']] += [var2int['FS'], var2int['FN']]
-    dag[var2int['GK']] += [var2int['FF'], var2int['FDB']]
-    dag[var2int['KMS']] += [var2int['A'], var2int['AD']]
-    dag[var2int['DK']] += [var2int['GP'], var2int['GK']]
-    dag[var2int['SD']] += [var2int['KMS']]
-    dag[var2int['SMK']] += [var2int['DK'], var2int['SD']]
+    dag = {v:[] for v in mSMK_variables}
+    dag['GP'] += ['FS', 'FN']
+    dag['GK'] += ['FF', 'FDB']
+    dag['KMS'] += ['A', 'AD']
+    dag['DK'] += ['GP', 'GK']
+    dag['SD'] += ['KMS']
+    dag['SMK'] += ['DK', 'SD']
     return dag
 
 def get_mSMK_SCM(n, u):
@@ -451,7 +451,7 @@ def bbSMK_model(u, e, n):
     for i in range(1,n+1):
         for dim in ("FS", "FN", "FF", "FDB", "A", "AD"):
             dim_id = dim2id[f"{dim}-U{i}"]
-            s[dim_id] = e.get(dim_id, u[dim_id])
+            s[dim_id] = e.get(f"{dim}-U{i}", u[dim_id])
     GP = [s[dim2id[f"FS-U{i}"]] or s[dim2id[f"FN-U{i}"]] for i in range(1, n+1)]
     GK = [s[dim2id[f"FF-U{i}"]] or s[dim2id[f"FDB-U{i}"]] for i in range(1, n+1)]
     KMS = [s[dim2id[f"A-U{i}"]] and s[dim2id[f"AD-U{i}"]] for i in range(1, n+1)]
@@ -473,7 +473,7 @@ def get_bbSMK_SCM(n, u):
         F=lambda u,e: bbSMK_model(u,e,n),
         u=u,
         psi=psi,
-        dag=suzzy_dag
+        dag=None
     )
 
 """Noisy SMK"""
@@ -486,19 +486,23 @@ def suzy_noisy_model(u, e, t):
     e = dict(e)
     s = np.zeros(len(suzzy_vars), dtype=int).tolist()
     ST, BT, SH, BH, BS = range(len(s))
-    s[ST] = e.get(ST, noise(u[0], t))
-    s[BT] = e.get(BT, noise(u[1], t))
-    s[SH] = e.get(SH, noise(s[ST], t))
-    s[BH] = e.get(BH, noise(s[BT] and not s[SH], t))
-    s[BS] = e.get(BS, noise(s[BH] or s[SH], t))
+    s[ST] = e.get("ST", noise(u[0], t))
+    s[BT] = e.get("BT", noise(u[1], t))
+    s[SH] = e.get("SH", noise(s[ST], t))
+    s[BH] = e.get("BH", noise(s[BT] and not s[SH], t))
+    s[BS] = e.get("BS", noise(s[BH] or s[SH], t))
     return s
 
 def get_noisy_suzzy_SCM(u, t, lucb_params):
     F = lambda u,e: suzy_noisy_model(u,e,t)
     
-    def evaluator(e):
-        s = suzy_noisy_model(u,e,t)
-        return s[-1], psi(s)
+    def evaluator(e, N):
+        out = []
+        for _ in range(N):
+            s = suzy_noisy_model(u,e,t)
+            out.append([s[-1], psi(s)/len(s)])
+        
+        return np.array(out)
         
     return SCM(
         V=suzzy_vars,
@@ -511,13 +515,13 @@ def get_noisy_suzzy_SCM(u, t, lucb_params):
         sim=lambda E: lucb(evaluator, E, **lucb_params)
     )
 
-def set_value_vect(s, var_id, compute_value, e, t):
-    if var_id not in e:
-        s[:,var_id] = compute_value(s)
+def set_value_vect(s, var, dim2id, compute_value, e, t):
+    if var not in e:
+        s[:,dim2id[var]] = compute_value(s)
         ids = np.random.rand(s.shape[0]) < t
-        s[ids,var_id] = 1 - s[ids,var_id]
+        s[ids,dim2id[var]] = 1 - s[ids,dim2id[var]]
     else:
-        s[:,var_id] = e[var_id]
+        s[:,dim2id[var]] = e[var]
 
 def elementwise_any(list_of_arrays):
     if not len(list_of_arrays):
@@ -533,24 +537,24 @@ def nSMK_model_vectorized(u, e, N, n, t):
     for i in range(1,n+1):
         for dim in ("FS", "FN", "FF", "FDB", "A", "AD"):
             dim_id = dim2id[f"{dim}-U{i}"]
-            s[:,dim_id] = e.get(dim_id, u[dim_id])
+            s[:,dim_id] = e.get(f"{dim}-U{i}", u[dim_id])
     # Set depth-1
     for i in range(1,n+1):
-        set_value_vect(s, dim2id[f"GP-U{i}"], lambda s: s[:,dim2id[f"FS-U{i}"]] | s[:,dim2id[f"FN-U{i}"]], e, t)
-        set_value_vect(s, dim2id[f"GK-U{i}"], lambda s: s[:,dim2id[f"FF-U{i}"]] | s[:,dim2id[f"FDB-U{i}"]], e, t)
-        set_value_vect(s, dim2id[f"KMS-U{i}"], lambda s: s[:,dim2id[f"A-U{i}"]] & s[:,dim2id[f"AD-U{i}"]], e, t)
+        set_value_vect(s, f"GP-U{i}", dim2id, lambda s: s[:,dim2id[f"FS-U{i}"]] | s[:,dim2id[f"FN-U{i}"]], e, t)
+        set_value_vect(s, f"GK-U{i}", dim2id, lambda s: s[:,dim2id[f"FF-U{i}"]] | s[:,dim2id[f"FDB-U{i}"]], e, t)
+        set_value_vect(s, f"KMS-U{i}", dim2id, lambda s: s[:,dim2id[f"A-U{i}"]] & s[:,dim2id[f"AD-U{i}"]], e, t)
     # Set DK
     for i in range(1,n+1):
         block = elementwise_any([s[:,dim2id[f"DK-U{j}"]] for j in range(1, i)])
-        set_value_vect(s, dim2id[f"DK-U{i}"], lambda s: s[:,dim2id[f"GP-U{i}"]] & s[:,dim2id[f"GK-U{i}"]] & ~block, e, t)
+        set_value_vect(s, f"DK-U{i}", dim2id, lambda s: s[:,dim2id[f"GP-U{i}"]] & s[:,dim2id[f"GK-U{i}"]] & ~block, e, t)
     # Set SD
     for i in range(1, n+1):
         block = elementwise_any([s[:,dim2id[f"SD-U{j}"]] for j in range(1,i)])
-        set_value_vect(s, dim2id[f"SD-U{i}"], lambda s: s[:,dim2id[f"KMS-U{i}"]] & ~block, e, t)
+        set_value_vect(s, f"SD-U{i}", dim2id, lambda s: s[:,dim2id[f"KMS-U{i}"]] & ~block, e, t)
         
-    set_value_vect(s, dim2id["DK"], lambda s: elementwise_any([s[:,dim2id[f"DK-U{i}"]] for i in range(1,n+1)]), e, t)
-    set_value_vect(s, dim2id["SD"], lambda s: elementwise_any([s[:,dim2id[f"SD-U{i}"]] for i in range(1,n+1)]), e, t)
-    set_value_vect(s, dim2id["SMK"], lambda s: s[:,dim2id["SD"]] | s[:,dim2id["DK"]], e, t)
+    set_value_vect(s, "DK", dim2id, lambda s: elementwise_any([s[:,dim2id[f"DK-U{i}"]] for i in range(1,n+1)]), e, t)
+    set_value_vect(s, "SD", dim2id, lambda s: elementwise_any([s[:,dim2id[f"SD-U{i}"]] for i in range(1,n+1)]), e, t)
+    set_value_vect(s, "SMK", dim2id, lambda s: s[:,dim2id["SD"]] | s[:,dim2id["DK"]], e, t)
     return s
 
 
@@ -563,28 +567,28 @@ def nSMK_model(u, e, n, t):
     for i in range(1,n+1):
         for dim in ("FS", "FN", "FF", "FDB", "A", "AD"):
             dim_id = dim2id[f"{dim}-U{i}"]
-            s[dim_id] = e.get(dim_id, u[dim_id])
+            s[dim_id] = e.get(f"{dim}-U{i}", u[dim_id])
     # Set depth-1
     for i in range(1,n+1):
         # Set GP
         s[dim2id[f"GP-U{i}"]] = e.get(
-            dim2id[f"GP-U{i}"], 
+            f"GP-U{i}", 
             noise(s[dim2id[f"FS-U{i}"]] or s[dim2id[f"FN-U{i}"]], t)
         )
         # Set GK
         s[dim2id[f"GK-U{i}"]] = e.get(
-            dim2id[f"GK-U{i}"], 
+            f"GK-U{i}", 
             noise(s[dim2id[f"FF-U{i}"]] or s[dim2id[f"FDB-U{i}"]], t)
         )
         # Set KMS
         s[dim2id[f"KMS-U{i}"]] = e.get(
-            dim2id[f"KMS-U{i}"], 
+            f"KMS-U{i}", 
             noise(s[dim2id[f"A-U{i}"]] and s[dim2id[f"AD-U{i}"]], t)
         )
     # Set DK
     for i in range(1,n+1):
         s[dim2id[f"DK-U{i}"]] = e.get(
-            dim2id[f"DK-U{i}"], 
+            f"DK-U{i}", 
             noise(s[dim2id[f"GP-U{i}"]] and \
             s[dim2id[f"GK-U{i}"]] and \
             not any([s[dim2id[f"DK-U{j}"]] for j in range(1, i)]), t)
@@ -592,23 +596,23 @@ def nSMK_model(u, e, n, t):
     # Set SD
     for i in range(1, n+1):
         s[dim2id[f"SD-U{i}"]] = e.get(
-            dim2id[f"SD-U{i}"], 
+            f"SD-U{i}", 
             noise(s[dim2id[f"KMS-U{i}"]] and \
             not any([s[dim2id[f"SD-U{j}"]] for j in range(1,i)]), t)
         )
     # Set global DK
     s[dim2id["DK"]] = e.get(
-        dim2id["DK"], 
+        "DK", 
         noise(any([s[dim2id[f"DK-U{i}"]] for i in range(1,n+1)]), t)
     )
     # Set global SD
     s[dim2id["SD"]] = e.get(
-        dim2id["SD"], 
+        "SD", 
         noise(any([s[dim2id[f"SD-U{i}"]] for i in range(1,n+1)]), t)
     )
     # Set SMK
     s[dim2id["SMK"]] = e.get(
-        dim2id["SMK"], 
+        "SMK", 
         noise(s[dim2id["DK"]] or s[dim2id["SD"]], t)
     )
     return s

@@ -6,14 +6,6 @@ from collections import deque
 from .base_algorithm import show_rules, get_initial_rules, get_rules, beam_search, get_rule_desc, is_minimal
 
 
-def unmap_causes(causes, var_mapping, W_R):
-    for i in range(len(causes)):
-        cause = list(causes[i])
-        cause[0] = [(var_mapping[dim], value) for dim, value in cause[0]] + list(W_R)
-        cause[3] = {var_mapping[dim] for dim in cause[3]}
-        cause[4] = {var_mapping[dim] for dim in cause[4]} | {w[0] for w in W_R}
-        causes[i] = cause
-
 def merge_set_lists(list1, list2):
     # Convert each set in the lists to a frozenset and add to a set to remove duplicates
     unique_frozensets = set()
@@ -27,47 +19,20 @@ def merge_set_lists(list1, list2):
 
     return merged_list
 
-def map_cause_sets(Cs, var_mapping):
-    mapped_Cs = []
-    dim2index = {dim:i for i,dim in enumerate(var_mapping)}
-    for C in Cs:
-        mapped_C = set()
-        for dim in C:
-            if dim in dim2index:
-                mapped_C.add(dim2index[dim])
-            else:
-                break
-        else:
-            mapped_Cs.append(mapped_C)
-        
-    return mapped_Cs
-
-def unmap_cause_sets(Cs, var_mapping):
-    return [{var_mapping[dim] for dim in C} for C in Cs]
-
-def make_beam_search(instance, domains, simulation, variables, 
-                     current_var_ids, Cs, W_R,
+def make_beam_search(v, D, simulation, V, 
+                     I, Cs, W_R,
                      **kargs):
-    current_domains = [domains[var_id] for var_id in current_var_ids]
-    current_variables = [variables[var_id] for var_id in current_var_ids]
-    current_instance = [instance[var_id] for var_id in current_var_ids]
+    W_R = tuple([(var, value) for var, value in zip(V,v) if var in W_R])
+    D, V, v = zip(*[(domain, variable, value) for domain, variable, value in zip(D,V,v) if variable in I])
     
-    mapped_Cs = map_cause_sets(Cs, current_var_ids)
-    
-    causes = beam_search(current_instance, current_domains, simulation, 
-                                    current_variables, W_R=W_R,
-                                    var_mapping=current_var_ids, Cs=mapped_Cs, **kargs)
-    mapped_Cs = [v[3] for v in causes]
-    
-    unmap_causes(causes, current_var_ids, W_R)
-    new_Cs = unmap_cause_sets(mapped_Cs, current_var_ids)
+    E = beam_search(v, D, simulation, V, W_R=W_R, Cs=Cs, **kargs)
     
     Cs = merge_set_lists(
-        new_Cs, 
+        [e[3] for e in E], 
         Cs
     )
     
-    return causes, Cs
+    return E, Cs
 
 def check_node_for_expansion(child_vars, visited, control):
     if not child_vars: return False
@@ -85,35 +50,28 @@ def backtrack_closure(C, PA):
                 closure += (C[i],)
             else:
                 closure += tuple(PA[C[i]])
-        yield tuple(set(closure))
+        yield set(closure)
 
 def CH(var, PA):
-    return {i for i, parents in enumerate(PA) if var in parents}
+    return {child for child, parents in PA.items() if var in parents}
 
 def CH_set(S, PA):
     return set.union(*[CH(var, PA) for var in S])
 
 def W_R_compl(C, back, PA, boolean):
-    C = set(C)
-    anc = CH_set(back, PA) - C
+    excl = set(C) | set(back)
+    anc = CH_set(back, PA) - excl
     if boolean:
-        return anc
+        return anc - CH_set(excl, PA)
     ch = anc.copy()
     while ch:
-        ch = CH_set(ch) - C
+        ch = CH_set(ch) - excl
         anc |= ch
     return anc
-
 
 def minimal_merge(E1, E2):
     return [e for e in E1 if is_minimal(e, E2)] + [e for e in E2 if is_minimal(e, E1)]
 
-def show_info(C, V, next_I, next_W_R, verbose):
-    if verbose: 
-        cause_repr = get_rule_desc(C, V)
-        child_repr = [V[i] for i in next_I]
-        W_repr = [V[i[0]] for i in next_W_R]
-        print(f"  Cause {cause_repr} -> Exp:{child_repr} W:{W_repr}")
 
 def iterative_identification(
     v, D, simulation, V, dag, PA_T, 
@@ -149,8 +107,7 @@ def iterative_identification(
             for next_I in backtrack_closure(C, PA):
                 if check_node_for_expansion(next_I, visited, control):
                     next_W_R = W_R_compl(C, next_I, PA, boolean) | e[4]
-                    next_W_R = tuple([(dim, v[dim]) for dim in next_W_R])
-                    show_info(e, V, next_I, next_W_R, verbose)
+                    if verbose: print(f"  {C=} -> {next_I=} {next_W_R=}")
                         
                     queue.append((next_I,next_W_R))
                     control.add(tuple(next_I))
