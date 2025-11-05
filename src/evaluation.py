@@ -8,7 +8,7 @@ from general import Exhaustivness, Models, AlgoTypes
 from benchmark_models import SMK_model, get_SMK_V, get_bbSMK_SCM
 from benchmark_models import get_noisy_suzzy_SCM, get_avg_nSMK_SCM, get_lucb_nSMK_SCM
 # from actualcauses import beam_search, iterative_identification
-from actualcauses_local.base_algorithm import beam_search
+from actualcauses_local.base_algorithm import beam_search, get_sets
 from actualcauses_local.iterative_subinstance_algorithm import iterative_identification
 
 # === General ===
@@ -112,25 +112,24 @@ def build_ref_causes_bb(data):
         n_attacker = datum["n_attacker"]
         for res in datum["results"]:
             context_repr = int("".join(map(str,res["context"])), 2)
-            Cs = res["causes"]
-            
+            E = res["rules"]
             scm = get_bbSMK_SCM(n_attacker, res["context"])
-            # print(scm.get_input().items())
-            for C in Cs:
-                C_SCM = {}
-                for key, value in scm.get_input().items():
-                    if key == "simulation":
-                        C_SCM[key] = value
-                    else:
-                        C_SCM[key] = tuple([value[var] for var in C])
-                output = beam_search(**C_SCM,
-                                     max_steps=-1,beam_size=-1,
-                                     early_stop=False, var_mapping=C, verbose=0)
+            actual_values = dict(zip(scm.V, scm.v))
+            for e in E:
+                print(e)
+                C, W = get_sets(e, actual_values)
+                V, D, v = [], [], []
+                for variable, domain, value in zip(scm.V, scm.D, scm.v):
+                    if variable in C:
+                        V.append(variable)
+                        D.append(domain)
+                        v.append(value)
+                output = beam_search(V=V, v=v, D=D, simulation=scm.get_input()["simulation"],
+                                     max_steps=-1,beam_size=-1, W_R=W)
                 min_Cs = []
                 for values in output:
                     min_Cs.append([C[dim] for dim in values[3]])
                 min_Cs={tuple(cause) for cause in min_Cs}
-            # if f"{context_repr}-{n_attacker}" == '2638-2': print(min_Cs)
                 ref_causes[f"{context_repr}-{n_attacker}"] |= min_Cs
     return ref_causes
 

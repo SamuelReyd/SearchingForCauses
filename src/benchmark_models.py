@@ -52,6 +52,50 @@ def xnor_model(u, e):
 xnor_scm = SCM(V=["X", "A", "B", "T"],U=["x"],u=[1],D=(0,1),
                F=xnor_model,psi=lambda x: 1,dag={"X":[], "A":["X"], "B":["X"], "T":["A", "B"]})
 
+def chain_model(u, e):
+    s = [None] * 6
+    e = dict(e)
+    s[0] = e.get("X", u[0])
+    s[1] = e.get("J", s[0])
+    s[2] = e.get("H", s[1])
+    if s[2] and not s[1]: # H and not J
+        g = "gx"
+    elif (s[2] and s[1]) or (not s[2] and s[1]): # (H and J) or (not H and J)
+        g = "g*"
+    elif not s[2] and not s[1]: # not H and not J
+        g = "g'"
+    s[3] = e.get("G", g)
+    s[4] = e.get("B", (s[3] != "gx") or s[0])
+    s[5] = s[4]
+    return s
+
+chain_scm = SCM(V=["X", "J", "H", "G", "B", "T"],U=["x"],u=[1],
+                D=[(0,1),(0,1),(0,1),("g'","g*", "gx"), (0,1), (0,1)],
+                F=chain_model,psi=lambda s: 1,
+                dag={"T":["B"], "B":["X","J","G"], "G": ["H", "J"], "H": ["J"], "J": ["X"], "X": []})
+
+def split_model(u, e):
+    s = [None] * 7
+    e = dict(e)
+    s[0] = e.get("X", u[0])
+    s[1] = e.get("G", u[1])
+    s[2] = e.get("Y", u[2])
+    s[3] = e.get("H", u[3])
+    if s[1]: a = "g1"
+    else: a = "x1" if s[0] else "x0"
+    s[4] = e.get("A", a)
+    if s[3]: b = "h1"
+    else: b = "y1" if s[2] else "y0"
+    s[5] = e.get("B", b)
+    t = not (s[4] == "x0" or s[5] == "y0" or (s[4]=="g1" and s[5]=="h1"))
+    s[6] = e.get("T", t)
+    return s
+
+split_scm = SCM(V=["X", "G", "Y", "H", "A", "B", "T"],U=["x", "g", "y", "h"],
+                D=[(0,1), (0,1), (0,1), (0,1), ("x0","x1","g0","g1"),("y0","y1","h0","h1"),(0,1)],
+                u=(1,0,1,0),F=split_model,psi=lambda s:1,
+                dag={"X":[],"G":[],"Y":[],"H":[],"A":["X","G"],"B":["Y","H"],"T":["A","B"]})
+
 """Steal Master Key"""
 smk_base_vars_exo = "fs fn ff fdb a ad".split()
 smk_base_vars_users = "FS FN FF FDB A AD GP GK KMS DK SD".split()
@@ -158,10 +202,10 @@ def get_SMK_SCM(n:int, u:list):
     V = get_SMK_V(n)
     def vectorized_simulations(E):
         out = []
-        sub_N = int(5e5)
+        sub_N = 100_000
         for i in range(0, len(E), sub_N):
             sub_E = E[i*sub_N:(i+1)*sub_N]
-            S = vectorized_SMK_model(u, E, n)
+            S = vectorized_SMK_model(u, sub_E, n)
             for s in S:
                 out.append((s, int(s[-1]), psi(s)))
         return out
@@ -172,35 +216,27 @@ def get_SMK_SCM(n:int, u:list):
 def get_sympy_SMK(n):
     leaf_vars = ["FS", "FN", "FF", "FDB", "A", "AD"]
     node_vars = ["GP", "GK", "KMS", "DK", "SD"]
-    
     exo_var_labels = [
         f"{dim.lower()}-u{i}" \
     for dim in leaf_vars \
     for i in range(1,n+1)
     ]
-    
     var_labels = [
             f"{dim}-U{i}" \
         for dim in leaf_vars + node_vars \
         for i in range(1,n+1)
         ]
-    
     var_labels += ["DK", "SD", "SMK"]
     var_labels += exo_var_labels
-    
     label2id = {label: i for i,label in enumerate(var_labels)}
-    
     variables = symbols(var_labels)
-    
     target = variables[label2id["SMK"]]
-    
     equations = {}
     # Set leaves
     for exo_var_label in exo_var_labels:
         exo_var_id = label2id[exo_var_label]
         endo_var_id = label2id[exo_var_label.upper()]
         equations[variables[endo_var_id]] = variables[exo_var_id]
-        
     # Set depth 1
     for i in range(1,n+1):
         GP, FS, FN, GK, FF, FDB, KMS, A, AD = [
@@ -210,29 +246,23 @@ def get_sympy_SMK(n):
         
         equations[GK] = FF | FDB
         equations[KMS] = A & AD
-        equations[GP] = FS | FN
-        
+        equations[GP] = FS | FN 
     # Set DK
     for i in range(1,n+1):
         equations[variables[label2id[f"DK-U{i}"]]] = \
         variables[label2id[f"GP-U{i}"]] & variables[label2id[f"GK-U{i}"]] &\
         And(*[~variables[label2id[f"DK-U{j}"]] for j in range(1, i)])
-    
     # Set SD
     for i in range(1,n+1):
         equations[variables[label2id[f"SD-U{i}"]]] = \
         variables[label2id[f"KMS-U{i}"]] &\
         And(*[~variables[label2id[f"SD-U{j}"]] for j in range(1, i)])
-    
     # Set global DK
     equations[variables[label2id["DK"]]] = \
     Or(*[variables[label2id[f"DK-U{i}"]] for i in range(1, n+1)])
-    
-    
     # Set global SD
     equations[variables[label2id["SD"]]] = \
     Or(*[variables[label2id[f"SD-U{i}"]] for i in range(1, n+1)])
-    
     # Set SMK
     equations[variables[label2id["SMK"]]] = \
     variables[label2id["SD"]] | variables[label2id["DK"]]
@@ -271,7 +301,8 @@ mSMK_DAG = {"FS":[], "FN":[], "FF":[], "FDB":[], "A":[], "AD": [],
             "DK": ['GP', 'GK'], "SD": ['KMS'], "SMK": ['DK', 'SD']}
 
 def get_mSMK_SCM(n, u):
-    return SCM(V=mSMK_variables,U=smk_base_vars_exo,D=get_mSMK_domains(n),
+    return SCM(V=mSMK_variables,U=get_SMK_U(n),
+               D=get_mSMK_domains(n),
         F=lambda u,e: mSMK_model(u,e,n),u=u,psi=mSMK_heuristic,dag=mSMK_DAG)
 
 """Black Box SMK"""

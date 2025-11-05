@@ -31,38 +31,19 @@ def run_one_SMK(contexts, n, beam_size,
         early_stop = (exh == Exhaustivness.SMALLEST)
         u = u.tolist()
         # Adapt on the version of the SCM  
-        if model == Models.BASE:
-            scm = get_SMK_SCM(n, u)
-        elif model == Models.NON_BOOLEAN:
-            scm = get_mSMK_SCM(n, u)
-        elif model == Models.BLACK_BOX:
-            scm = get_bbSMK_SCM(n, u)
-        else:
-            raise Exception(f"Model {model} not handled")
-        # Adapt on algo type
-        if struct == AlgoTypes.BASE:
-            values, t = time_fn(
-                beam_search, **scm.get_input(), 
-                early_stop=early_stop, beam_size=beam_size, verbose=0,
-                max_steps=max_steps,
-            )
-        elif struct == AlgoTypes.STRUCTURED:
-            values, t = time_fn(
-                iterative_identification, **scm.get_input(False),
-                early_stop=early_stop, beam_size=beam_size, verbose=0,
-                max_steps=max_steps,
-            )
+        if model == Models.BASE: scm = get_SMK_SCM(n, u)
+        elif model == Models.NON_BOOLEAN: scm = get_mSMK_SCM(n, u)
+        elif model == Models.BLACK_BOX: scm = get_bbSMK_SCM(n, u)
+        else: raise Exception(f"Model {model} not handled")
+        use_ISI = struct==AlgoTypes.STRUCTURED
         
-        states = [value[-1] for value in values]
-        causes = [tuple(value[3]) for value in values]
+        scm.find_causes(ISI=use_ISI, beam_size=beam_size, max_steps=max_steps)
+        
         data["results"].append({
-            "rules": serialize_rules(values),
-            "causes": causes,
+            "rules": serialize_interventions(scm.interventions),
+            "causes": scm.causes_hashable,
             "context": u,
-            "actual_state": scm.v,
-            "states": states,
-            "time": t,
-            "scores": [float(value[2]) for value in values]
+            "time": scm.identification_time,
         })
     return data
 
@@ -80,9 +61,7 @@ def run_SMK(n_attackers, beam_sizes,
     print(f"{n_attackers=} and {beam_sizes=}")
     for n, beam_size in tqdm(list(product(n_attackers, beam_sizes))):
         contexts = all_contexts[n]
-        data = run_one_SMK(contexts, n, beam_size, 
-                           exh, model, struct,
-                           max_steps, verbose=0)
+        data = run_one_SMK(contexts, n, beam_size, exh, model, struct, max_steps, verbose=0)
         results.append(data)
     save_json(prefix+f"results/{model.value}-{exh.value}/{struct.value}.json", results)
 
@@ -92,37 +71,19 @@ def run_one_noisy_SMK(n, u, beam_size, algo, max_steps, lucb_params, seed, nl, d
     lucb_params = lucb_params | {"beam_size": beam_size}
     lucb_params["lucb_info"] = []
     
-    if do_lucb:
-        scm = get_lucb_nSMK_SCM(n, u, nl, lucb_params)
-    else:
-        scm = get_avg_nSMK_SCM(n, u, lucb_params["max_iter"], nl)
+    if do_lucb: scm = get_lucb_nSMK_SCM(n, u, nl, lucb_params)
+    else: scm = get_avg_nSMK_SCM(n, u, lucb_params["max_iter"], nl)
     np.random.seed(seed)
-    if algo == AlgoTypes.BASE:
-        values, t = time_fn(
-            beam_search, 
-            **scm.get_input(), 
-            epsilon=eps,beam_size=beam_size, 
-            max_steps=max_steps, verbose=0
-        )
-    else:
-        values, t = time_fn(
-            iterative_identification, 
-            **scm.get_input(False), 
-            epsilon=eps,beam_size=beam_size, 
-            max_steps=max_steps, verbose=0
-        )
+
+    do_ISI = (algo != AlgoTypes.BASE)
+    scm.find_causes(ISI=do_ISI, epsilon=eps,beam_size=beam_size,max_steps=max_steps)
     
-    states = [value[-1] for value in values]
-    causes = [tuple(value[3]) for value in values]
     return {
-        "rules": serialize_rules(values),
-        "causes": causes,
+        "rules": serialize_interventions(scm.interventions),
+        "causes": scm.causes_hashable,
         "context": u,
-        "actual_state": scm.v,
-        "states": states,
-        "time": t,
+        "time": scm.identification_time,
         "seed": seed,
-        "scores": [float(value[2]) for value in values],
         "lucb_info": lucb_params["lucb_info"] if lucb_params is not None else None
     }
 
@@ -162,40 +123,6 @@ def run_noisy_SMK(algo, n_attackers, beam_sizes, max_steps, lucb_params, n_seeds
         prefix+f"results/{Models.NOISY.value}-{Exhaustivness.FULL.value}/{algo.value}-{lucb_label}.json", 
         results
     )
-
-# def run_noisy_SCM_params(base_params, Ns, nl, batch_sizes, algo,
-#                          u=[0, 1, 1, 0, 1, 1, 1, 1, 1, 1, 1, 0, 0, 1, 0, 0, 0, 0],
-#                          beam_size=50, N_exp=50, prefix=""
-#                         ):
-#     data = []
-#     for N in tqdm(Ns):
-#         for do_lucb in (True, False):
-#             if do_lucb: bs = batch_sizes
-#             else: bs = [None]
-#             for batch_size in bs:
-#                 params = base_params | {
-#                     "beam_size": beam_size,
-#                     "N": N,
-#                     "nl": nl,
-#                     "batch_size": batch_size,
-#                     "do_lucb": do_lucb,
-#                 }
-#                 lucb_params = build_lucb_params(**params)
-#                 datum = {
-#                     **params,
-#                     "lucb_params": lucb_params,
-#                     "u": u,
-#                     "n_attacker": len(u)//6,
-#                     "results": []
-#                 }
-#                 for seed in range(N_exp):
-#                     res = run_one_noisy_SMK(
-#                     u, **params, algo=algo,
-#                     seed=seed, max_steps=-1
-#                 )
-#                     datum["results"].append(res)
-#                 data.append(datum)
-#     save_json(prefix+f"results/noisy-params/{algo.value}.json", data)
 
 # === ILP ===
 def serialize_symbols(C, variables):

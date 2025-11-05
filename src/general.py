@@ -14,7 +14,7 @@ n_attackers_smallest = [2,  4,  6,  8, 11, 13, 15, 17, 20]
 full_attackers = list(set(n_attackers) | set(n_attackers_smallest))
 beam_sizes = [ 1, 12, 25, 37, 50]
 beam_sizes_smallest = [  1,  11,  22,  33,  44,  55,  66,  77,  88, 100]
-max_steps = 4
+max_steps = 8
 
 # == Noisy global params ==
 nl = 1.5
@@ -67,6 +67,18 @@ def serialize_rules(rule_values):
             s_rule.append([dim, value])
         rules.append(s_rule)
     return rules
+
+def serialize_interventions(E):
+    out = []
+    for e in E:
+        s_e = []
+        for dim, value in e:
+            if isinstance(value, Iterable):
+                value = [float(v) for v in value]
+            else: value = float(value)
+            s_e.append([dim, value])
+        out.append(s_e)
+    return out
 
 def load_json(file):
     with open(file) as file:

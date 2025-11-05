@@ -64,11 +64,19 @@ def show_rules(rule_values):
 def is_minimal(e, E):
     return not any([other[3] < e[3] for other in E])
 
+def minimal_merge(E1, E2):
+    E = [e for e in E1 if is_minimal(e, E2)] + [e for e in E2 if is_minimal(e, E1)]
+    return remove_duplicates(E)
+
 def filter_minimality(E):
     # Remove causes with strict subsets that are causes
     E = [e for e in E if is_minimal(e, E)]
 
     # If there are equalities, keep the ones with smallest W and best score
+    E = remove_duplicates(E)
+    return E
+
+def remove_duplicates(E):
     Cs = defaultdict(lambda: [])
     for e in E:
         Cs[tuple(e[3])].append(e)
@@ -77,6 +85,7 @@ def filter_minimality(E):
         best = min(cands, key=lambda e: (len(e[4]),e[2]))
         causes.append(best)
     return causes
+    
 
 def get_initial_rules(V, D, v):
     rules = []
@@ -101,13 +110,13 @@ def get_rules(previous_rules, V, D, v, Cs, actual_values, verbose=False):
                 continue
                 
             # Don't consider the rule if it is not minimal
-            non_minimal_cause = any([c <= C|{feature} for c in Cs]) # Complexity O(n)
-                
+            non_minimal_c = any([c <= C|{feature} for c in Cs]) # Complexity O(n)
+            
 
             # Add new rules with the feature
             for value in domain:
                 # Check for minimality if we add a new variable to C
-                if value != actual_value and non_minimal_cause:
+                if value != actual_value and non_minimal_c:
                     continue
                 # Build the rule
                 new_rule = rule + ((feature, value),)
@@ -149,14 +158,11 @@ def do_simulation(simulation, cache, beams):
     if cache is None: return simulation(beams)
     cached_results = []
     non_cached_beams = []
-    # print(f"{beams=}")
-    # print(f"{cache=}")
     for e in beams:
         if e in cache:
             cached_results.append(cache[e])
         else:
             non_cached_beams.append(e)
-    # print(len(cached_results))
     cf_values = simulation(non_cached_beams)
     cache |= dict(zip(non_cached_beams, cf_values))
     return cached_results + cf_values
@@ -175,7 +181,9 @@ def beam_search(
     all_causes = []
     if W_R is None: W_R = tuple()
     actual_values = dict(zip(V, v)) | dict(W_R)
+    if not minimality: full_interventions = []
     init_time = time.time()
+    beams = None
     if Cs is None: Cs = []
     if max_steps == -1 or max_steps is None: iterator = count(start=1, step=1)
     else: iterator = range(1,max_steps+1)
@@ -185,7 +193,9 @@ def beam_search(
         if verbose >= 2: print(f"{f'Step {t}':=^30}")
             
         # Create the rules for step t base on the ones from t-1, we use the initial ones if t==1
-        beams = get_rules(beams if t > 1 else None, V, D, v, Cs, actual_values, verbose >= 3)
+        beams = get_rules(beams, V, D, v, Cs if minimality else [], actual_values, verbose >= 3)
+        if t == 1 and W_R:
+            beams = [beam + W_R for beam in beams]
 
         # Check for early stop
         if check_early_stop(beams, early_stop, all_causes, max_time, init_time):
@@ -195,30 +205,41 @@ def beam_search(
         if verbose >= 2: print(f"Evaluating {len(beams)} rules")
 
         # Evaluate the rules using the simulation 
-        if W_R:
-            beams = [beam + W_R for beam in beams]
-                
         cf_values = do_simulation(simulation, cache, beams)
         
         # Build the tuples of rule values
         causes, non_causes = split_rules(beams, cf_values, actual_values, epsilon)
 
-        # Filter causes to keep only minimal ones and save them
-        causes = filter_minimality(causes)
-        all_causes += causes
-        for rule_value in causes:
+        # Filter causes to keep only minimal ones
+        minimal_causes = filter_minimality(causes)
+
+        # Save minimal causes
+        if minimality:
+            all_causes += minimal_causes
+        # Search for all counterfactual interventions:
+        else:
+            # Filter non-minimal propagated causes
+            all_causes = minimal_merge(all_causes, minimal_causes)
+            # Save all counterfactual interventions
+            full_interventions += causes
+            # Remove duplicates but not non-minimal interventions
+            full_interventions = remove_duplicates(full_interventions)
+
+        # Save the cause sets
+        for rule_value in minimal_causes:
             Cs.append(rule_value[3])
 
         # Build next beams
-        beams = get_next_beams(non_causes, beam_size, Cs)
+        if minimality:
+            beams = get_next_beams(non_causes, beam_size, Cs)
+        else:
+            beams = get_next_beams(non_causes + causes, beam_size, [])
         
         # Render step output
-        render_step(verbose, causes, non_causes)
+        render_step(verbose, minimal_causes, non_causes)
 
     # Render final result
     if verbose:
         print(f"----> Found {len(all_causes)} causes.")
-        # if all_causes:
-        #     print(f"{'Overall best rule:':=^30}")
-        #     show_rule(all_causes[0])
+    if not minimality: return all_causes, full_interventions
     return all_causes

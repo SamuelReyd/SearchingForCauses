@@ -44,6 +44,7 @@ class SCM:
         else:
             self.v = v
         self.causes = None
+        self.causes_hashable = None
         self.witnesses = None
         self.identification_output = None
         self.interventions = None
@@ -108,6 +109,7 @@ class SCM:
         self.identification_time = time.time() - t
         self.identification_output = out
         self.causes = [elt[3] for elt in out]
+        self.causes_hashable = [tuple(elt) for elt in self.causes]
         self.witnesses = [elt[4] for elt in out]
         self.interventions = [elt[0] for elt in out]
         
