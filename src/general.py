@@ -22,22 +22,18 @@ n_seeds = 10
 
 # == LUCB params ==
 max_iter_noisy = 20
-lucb_params = {
-    "cause_eps": .01,
-    "non_cause_eps": .01,
-    "beam_eps": .1,
-    
-    "a": .3, #.65,
-    "beam_size": None,
-    
-    "max_iter": max_iter_noisy,
-    "batch_size": int(max_iter_noisy*.2),
-    "init_batch_size": int(max_iter_noisy*.8),
-    
-    "verbose": 0,
-    "lucb_info": None,
-    
-}
+
+eps=.65
+lucb_params = {"a": .65, 
+               "cause_eps": .1, 
+               "non_cause_eps": .1, 
+               "beam_eps": .1, 
+               "max_iter": max_iter_noisy, 
+               "verbose": 0, 
+               "init_batch_size": 30,
+               "batch_size": 10,
+               "delta": .05
+               }
 
 # General
 class AlgoTypes(Enum):
