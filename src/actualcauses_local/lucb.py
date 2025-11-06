@@ -272,7 +272,5 @@ def lucb(evaluator, rules, beam_size, a=.05, beam_eps=.1, cause_eps=.01, non_cau
         print(f"psi m={stats[psi_m].round(2)}")
         print(f"n_samples={stats[n]}")
     if lucb_info is not None:
-        lucb_info.append({
-            "n_calls": int(n_samples.sum())
-        })
+        lucb_info["n_calls"] += int(stats[n].sum())
     return [(stats[:,i], float(stats[phi_m,i]), float(stats[psi_m,i])) for i in range(n_arms)]

@@ -55,16 +55,30 @@ def CH(var, PA):
 def CH_set(S, PA):
     return set.union(*[CH(var, PA) for var in S])
 
+def anc(S, PA):
+    ch = CH_set(S, PA)
+    anc = set()
+    while ch:
+        anc |= ch
+        ch = CH_set(ch, PA)
+    return anc
+
 def W_R_compl(C, back, PA, boolean):
     excl = set(C) | set(back)
-    anc = CH_set(back - C, PA) - excl
     if boolean:
-        return anc - CH_set(C, PA)
-    ch = anc.copy()
-    while ch:
-        ch = CH_set(ch, PA) - excl
-        anc |= ch
-    return anc
+        return CH_set(back - C, PA) - excl - CH_set(C, PA)
+    return anc(back - C, PA) - excl - anc(C, PA)
+
+# def W_R_compl(C, back, PA, boolean):
+#     excl = set(C) | set(back)
+#     anc = CH_set(back - C, PA) - excl
+#     if boolean:
+#         return anc - CH_set(C, PA)
+#     ch = anc.copy()
+#     while ch:
+#         ch = CH_set(ch, PA) - excl
+#         anc |= ch
+#     return anc
 
 def iterative_identification(v, D, simulation, V, dag, PA_T, cache_size=-1,**kargs):
     PA = dag

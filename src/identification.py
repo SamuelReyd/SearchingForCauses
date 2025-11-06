@@ -2,6 +2,7 @@ import numpy as np, json
 from tqdm import tqdm
 
 from itertools import product
+from collections import defaultdict
 
 from binary_models import *
 from benchmark_models import SMK_model, get_SMK_SCM, get_SMK_V, get_mSMK_SCM, get_bbSMK_SCM, get_avg_nSMK_SCM, get_lucb_nSMK_SCM
@@ -69,7 +70,7 @@ def run_SMK(n_attackers, beam_sizes,
 def run_one_noisy_SMK(n, u, beam_size, algo, max_steps, lucb_params, seed, nl, do_lucb):
     eps = lucb_params["a"]
     lucb_params = lucb_params | {"beam_size": beam_size}
-    lucb_params["lucb_info"] = []
+    lucb_params["lucb_info"] = defaultdict(lambda: 0)
     
     if do_lucb: scm = get_lucb_nSMK_SCM(n, u, nl, lucb_params)
     else: scm = get_avg_nSMK_SCM(n, u, lucb_params["max_iter"], nl)

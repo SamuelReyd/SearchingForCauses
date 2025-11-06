@@ -271,39 +271,87 @@ def get_sympy_SMK(n):
 """Non-boolean SMK"""
 mSMK_variables = smk_base_vars_users + ["SMK"]
 
-
-def mSMK_model(u, e, n):
-    s = [None] * len(mSMK_variables)
+def mSMK_model(u:list, e:list[list], n:int):
+    V = get_SMK_V(n)
+    s = [None] * len(V)
+    dim2id = dict(zip(V, range(len(V))))
     e = dict(e)
-    dim2id = dict(zip(mSMK_variables, range(len(mSMK_variables))))
-    labels = ("FS", "FN", "FF", "FDB", "A", "AD")
-    for i, label in enumerate(labels):
-        dim_id = dim2id[label]
-        s[dim_id] = e.get(label, tuple([j for j in range(n) if u[i * n + j]]))
-    s[dim2id["KMS"]] = e.get("KMS", tuple(set(s[dim2id["A"]]) & set(s[dim2id["AD"]])))
-    s[dim2id["SD"]] = e.get("SD", min(s[dim2id["KMS"]]) if s[dim2id["KMS"]] else -1)
-    s[dim2id["GK"]] = e.get("GK", tuple(set(s[dim2id["FF"]]) | set(s[dim2id["FDB"]])))
-    s[dim2id["GP"]] = e.get("GP", tuple(set(s[dim2id["FS"]]) | set(s[dim2id["FN"]])))
-    children = tuple(set(s[dim2id["GP"]]) & set(s[dim2id["GK"]]))
-    s[dim2id["DK"]] = e.get("DK", min(children) if children else -1)
-    s[dim2id["SMK"]] = e.get("SMK", int(s[dim2id["DK"]] > -1 or s[dim2id["SD"]] > -1))
+    # Set variables from exo source
+    for i in range(1,n+1):
+        for dim in ("FS", "FN", "FF", "FDB", "A", "AD"):
+            dim_id = dim2id[f"{dim}-U{i}"]
+            s[dim_id] = e.get(f"{dim}-U{i}", u[dim_id])
+    # print(s)
+    # Set depth-1
+    for i in range(1,n+1):
+        s[dim2id[f"GP-U{i}"]] = e.get(f"GP-U{i}", s[dim2id[f"FS-U{i}"]] + s[dim2id[f"FN-U{i}"]])
+        s[dim2id[f"GK-U{i}"]] = e.get(f"GK-U{i}", s[dim2id[f"FF-U{i}"]] + s[dim2id[f"FDB-U{i}"]])
+        # Set KMS
+        s[dim2id[f"KMS-U{i}"]] = e.get(f"KMS-U{i}", s[dim2id[f"A-U{i}"]] * s[dim2id[f"AD-U{i}"]])
+    # print(s)
+    # Set depth-2
+    for i in range(1,n+1):
+        block = max([s[dim2id[f"DK-U{j}"]] for j in range(1, i)]) if i > 1 else 0
+        s[dim2id[f"DK-U{i}"]] = e.get(f"DK-U{i}", 
+            max(0, s[dim2id[f"GP-U{i}"]] * s[dim2id[f"GK-U{i}"]] - block))
+    # print(s)
+    for i in range(1, n+1):
+        block = max([s[dim2id[f"SD-U{j}"]] for j in range(1, i)]) if i > 1 else 0
+        s[dim2id[f"SD-U{i}"]] = e.get(f"SD-U{i}", 
+            max(0, s[dim2id[f"KMS-U{i}"]] - block))
+    # print(s)
+    # Set depth -3
+    s[dim2id["DK"]] = e.get("DK", max([s[dim2id[f"DK-U{i}"]] for i in range(1,n+1)]))
+    # print(s)
+    s[dim2id["SD"]] = e.get("SD", max([s[dim2id[f"SD-U{i}"]] for i in range(1,n+1)]))
+    # print(s, s[dim2id["DK"]]>0, s[dim2id["SD"]>0)
+    s[dim2id["SMK"]] = e.get("SMK", s[dim2id["DK"]]>0 or s[dim2id["SD"]]>0)
+    # print(s)
     return s
 
-def get_mSMK_domains(n):
-    return [generate_subsets(n) for var in mSMK_variables[:-3]] + [[-1]+list(range(n))] * 2 + [[0,1]]
 
-def mSMK_heuristic(s):
-    dim2id = dict(zip(mSMK_variables, range(len(mSMK_variables))))
-    return sum([len(s[dim2id[dim]]) for dim in smk_base_vars_users[:-2]]) + s[dim2id["DK"]] + s[dim2id["SD"]]
-    
-mSMK_DAG = {"FS":[], "FN":[], "FF":[], "FDB":[], "A":[], "AD": [],
-            "GP": ['FS', 'FN'], "GK":['FF', 'FDB'], "KMS":['A', 'AD'], 
-            "DK": ['GP', 'GK'], "SD": ['KMS'], "SMK": ['DK', 'SD']}
+def get_mSMK_domains(n):
+    # FS, FN, FF, FDB, A, AD / GP, GK / KMS / DKu / SDu / DK / SD, SMK
+    return 6 * n * [(0,1)] + 2 * n * [(0,1,2)] + n * [(0,1)] + n * [(0,1,2,3,4)] + n * [(0,1)] + [(0,1,2,3,4)] + 2 * [(0,1)]
+
 
 def get_mSMK_SCM(n, u):
-    return SCM(V=mSMK_variables,U=get_SMK_U(n),
+    return SCM(V=get_SMK_V(n),U=get_SMK_U(n),
                D=get_mSMK_domains(n),
-        F=lambda u,e: mSMK_model(u,e,n),u=u,psi=mSMK_heuristic,dag=mSMK_DAG)
+        F=lambda u,e: mSMK_model(u,e,n),u=u,psi=psi,dag=get_SMK_DAG(n))
+
+# def mSMK_model(u, e, n):
+#     s = [None] * len(mSMK_variables)
+#     e = dict(e)
+#     dim2id = dict(zip(mSMK_variables, range(len(mSMK_variables))))
+#     labels = ("FS", "FN", "FF", "FDB", "A", "AD")
+#     for i, label in enumerate(labels):
+#         dim_id = dim2id[label]
+#         s[dim_id] = e.get(label, tuple([j for j in range(n) if u[i * n + j]]))
+#     s[dim2id["KMS"]] = e.get("KMS", tuple(set(s[dim2id["A"]]) & set(s[dim2id["AD"]])))
+#     s[dim2id["SD"]] = e.get("SD", min(s[dim2id["KMS"]]) if s[dim2id["KMS"]] else -1)
+#     s[dim2id["GK"]] = e.get("GK", tuple(set(s[dim2id["FF"]]) | set(s[dim2id["FDB"]])))
+#     s[dim2id["GP"]] = e.get("GP", tuple(set(s[dim2id["FS"]]) | set(s[dim2id["FN"]])))
+#     children = tuple(set(s[dim2id["GP"]]) & set(s[dim2id["GK"]]))
+#     s[dim2id["DK"]] = e.get("DK", min(children) if children else -1)
+#     s[dim2id["SMK"]] = e.get("SMK", int(s[dim2id["DK"]] > -1 or s[dim2id["SD"]] > -1))
+#     return s
+
+# def get_mSMK_domains(n):
+#     return [generate_subsets(n) for var in mSMK_variables[:-3]] + [[-1]+list(range(n))] * 2 + [[0,1]]
+
+# def mSMK_heuristic(s):
+#     dim2id = dict(zip(mSMK_variables, range(len(mSMK_variables))))
+#     return sum([len(s[dim2id[dim]]) for dim in smk_base_vars_users[:-2]]) + s[dim2id["DK"]] + s[dim2id["SD"]]
+    
+# mSMK_DAG = {"FS":[], "FN":[], "FF":[], "FDB":[], "A":[], "AD": [],
+#             "GP": ['FS', 'FN'], "GK":['FF', 'FDB'], "KMS":['A', 'AD'], 
+#             "DK": ['GP', 'GK'], "SD": ['KMS'], "SMK": ['DK', 'SD']}
+
+# def get_mSMK_SCM(n, u):
+#     return SCM(V=mSMK_variables,U=get_SMK_U(n),
+#                D=get_mSMK_domains(n),
+#         F=lambda u,e: mSMK_model(u,e,n),u=u,psi=mSMK_heuristic,dag=mSMK_DAG)
 
 """Black Box SMK"""
 def get_bbSMK_V(n):
