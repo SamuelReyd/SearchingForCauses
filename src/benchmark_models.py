@@ -342,7 +342,6 @@ def get_mSMK_domains(n):
     # FS, FN, FF, FDB, A, AD / GP, GK / KMS / DKu / SDu / DK / SD, SMK
     return 6 * n * [(0,1)] + 2 * n * [(0,1,2)] + n * [(0,1)] + n * [(0,1,2,3,4)] + n * [(0,1)] + [(0,1,2,3,4)] + 2 * [(0,1)]
 
-
 def get_mSMK_SCM(n, u):
     V = get_SMK_V(n)
     
@@ -361,70 +360,102 @@ def get_mSMK_SCM(n, u):
         F=lambda u,e: mSMK_model(u,e,n),u=u,psi=psi,dag=get_SMK_DAG(n),
               sim=vectorized_simulations)
 
-# def mSMK_model(u, e, n):
-#     s = [None] * len(mSMK_variables)
-#     e = dict(e)
-#     dim2id = dict(zip(mSMK_variables, range(len(mSMK_variables))))
-#     labels = ("FS", "FN", "FF", "FDB", "A", "AD")
-#     for i, label in enumerate(labels):
-#         dim_id = dim2id[label]
-#         s[dim_id] = e.get(label, tuple([j for j in range(n) if u[i * n + j]]))
-#     s[dim2id["KMS"]] = e.get("KMS", tuple(set(s[dim2id["A"]]) & set(s[dim2id["AD"]])))
-#     s[dim2id["SD"]] = e.get("SD", min(s[dim2id["KMS"]]) if s[dim2id["KMS"]] else -1)
-#     s[dim2id["GK"]] = e.get("GK", tuple(set(s[dim2id["FF"]]) | set(s[dim2id["FDB"]])))
-#     s[dim2id["GP"]] = e.get("GP", tuple(set(s[dim2id["FS"]]) | set(s[dim2id["FN"]])))
-#     children = tuple(set(s[dim2id["GP"]]) & set(s[dim2id["GK"]]))
-#     s[dim2id["DK"]] = e.get("DK", min(children) if children else -1)
-#     s[dim2id["SMK"]] = e.get("SMK", int(s[dim2id["DK"]] > -1 or s[dim2id["SD"]] > -1))
-#     return s
-
-# def get_mSMK_domains(n):
-#     return [generate_subsets(n) for var in mSMK_variables[:-3]] + [[-1]+list(range(n))] * 2 + [[0,1]]
-
-# def mSMK_heuristic(s):
-#     dim2id = dict(zip(mSMK_variables, range(len(mSMK_variables))))
-#     return sum([len(s[dim2id[dim]]) for dim in smk_base_vars_users[:-2]]) + s[dim2id["DK"]] + s[dim2id["SD"]]
-    
-# mSMK_DAG = {"FS":[], "FN":[], "FF":[], "FDB":[], "A":[], "AD": [],
-#             "GP": ['FS', 'FN'], "GK":['FF', 'FDB'], "KMS":['A', 'AD'], 
-#             "DK": ['GP', 'GK'], "SD": ['KMS'], "SMK": ['DK', 'SD']}
-
-# def get_mSMK_SCM(n, u):
-#     return SCM(V=mSMK_variables,U=get_SMK_U(n),
-#                D=get_mSMK_domains(n),
-#         F=lambda u,e: mSMK_model(u,e,n),u=u,psi=mSMK_heuristic,dag=mSMK_DAG)
-
 """Black Box SMK"""
 def get_bbSMK_V(n):
     return [f"{label}-U{i}" for label in ("FS", "FN", "FF", "FDB", "A", "AD") for i in range(1,n+1)] + ["SMK"]
 
 def bbSMK_model(u, e, n):
-    V = get_bbSMK_V(n)
-    e = dict(e)
-    dim2id = dict(zip(V, range(len(V))))
+    V = get_SMK_V(n)
     s = [None] * len(V)
-
-    # Set from exo
+    dim2id = dict(zip(V, range(len(V))))
+    e = dict(e)
+    # Set variables from exo source
     for i in range(1,n+1):
         for dim in ("FS", "FN", "FF", "FDB", "A", "AD"):
             dim_id = dim2id[f"{dim}-U{i}"]
             s[dim_id] = e.get(f"{dim}-U{i}", u[dim_id])
-    GP = [s[dim2id[f"FS-U{i}"]] or s[dim2id[f"FN-U{i}"]] for i in range(1, n+1)]
-    GK = [s[dim2id[f"FF-U{i}"]] or s[dim2id[f"FDB-U{i}"]] for i in range(1, n+1)]
-    KMS = [s[dim2id[f"A-U{i}"]] and s[dim2id[f"AD-U{i}"]] for i in range(1, n+1)]
-    DK = any([gp and gk for gp, gk in zip(GP,GK)])
-    SD = any(KMS)
+    # Set depth-1
+    for i in range(1,n+1):
+        s[dim2id[f"GP-U{i}"]] = int(s[dim2id[f"FS-U{i}"]] or s[dim2id[f"FN-U{i}"]])
+        s[dim2id[f"GK-U{i}"]] = int(s[dim2id[f"FF-U{i}"]] or s[dim2id[f"FDB-U{i}"]])
+        # Set KMS
+        s[dim2id[f"KMS-U{i}"]] = int(s[dim2id[f"A-U{i}"]] and s[dim2id[f"AD-U{i}"]])
+    # Set depth-2
+    for i in range(1,n+1):
+        s[dim2id[f"DK-U{i}"]] = int(s[dim2id[f"GP-U{i}"]] and s[dim2id[f"GK-U{i}"]] and not any([s[dim2id[f"DK-U{j}"]] for j in range(1, i)]))
+    for i in range(1, n+1):
+        s[dim2id[f"SD-U{i}"]] = int(s[dim2id[f"KMS-U{i}"]] and not any([s[dim2id[f"SD-U{j}"]] for j in range(1,i)]))
+    # Set depth -3
+    s[dim2id["DK"]] = int(any([s[dim2id[f"DK-U{i}"]] for i in range(1,n+1)]))
+    s[dim2id["SD"]] = int(any([s[dim2id[f"SD-U{i}"]] for i in range(1,n+1)]))
+    s[dim2id["SMK"]] = int(s[dim2id["DK"]] or s[dim2id["SD"]])
+    return s[:len(get_bbSMK_V(n))] + s[-1:]
+    # V = get_bbSMK_V(n)
+    # e = dict(e)
+    # dim2id = dict(zip(V, range(len(V))))
+    # s = [None] * len(V)
+
+    # # Set from exo
+    # for i in range(1,n+1):
+    #     for dim in ("FS", "FN", "FF", "FDB", "A", "AD"):
+    #         dim_id = dim2id[f"{dim}-U{i}"]
+    #         s[dim_id] = e.get(f"{dim}-U{i}", u[dim_id])
+    # GP = [s[dim2id[f"FS-U{i}"]] or s[dim2id[f"FN-U{i}"]] for i in range(1, n+1)]
+    # GK = [s[dim2id[f"FF-U{i}"]] or s[dim2id[f"FDB-U{i}"]] for i in range(1, n+1)]
+    # KMS = [s[dim2id[f"A-U{i}"]] and s[dim2id[f"AD-U{i}"]] for i in range(1, n+1)]
+    # DK = any([gp and gk for gp, gk in zip(GP,GK)])
+    # SD = any(KMS)
         
-    # Set SMK
-    s[dim2id["SMK"]] = e.get(
-        dim2id["SMK"], 
-        int(DK or SD)
-    )
-    return s
+    # # Set SMK
+    # s[dim2id["SMK"]] = e.get(
+    #     dim2id["SMK"], 
+    #     int(DK or SD)
+    # )
+    # return s
+
+def vectorized_bbSMK_model(u, E, n, N=1, t=0):
+    formated_E = defaultdict(lambda: [])
+    for i, e in enumerate(E):
+        for var, value in e:
+            formated_E[var].append((slice(i*N,(i+1)*N),value))
+    V = get_SMK_V(n)
+    s = np.zeros((len(E)*N, len(V)), dtype=bool)
+    dim2id = dict(zip(V, range(len(V))))
+    for i in range(1,n+1):
+        for dim in ("FS", "FN", "FF", "FDB", "A", "AD"):
+            dim_id = dim2id[f"{dim}-U{i}"]
+            set_value_vect(s, f"{dim}-U{i}", dim2id, u[dim_id], formated_E)
+    for i in range(1,n+1):
+        s[:,dim2id[f"GP-U{i}"]] = s[:,dim2id[f"FS-U{i}"]] | s[:,dim2id[f"FN-U{i}"]]
+        s[:,dim2id[f"GK-U{i}"]] = s[:,dim2id[f"FF-U{i}"]] | s[:,dim2id[f"FDB-U{i}"]]
+        s[:,dim2id[f"KMS-U{i}"]] = s[:,dim2id[f"A-U{i}"]] & s[:,dim2id[f"AD-U{i}"]]
+    for i in range(1,n+1):
+        block_DK = elementwise_any([s[:,dim2id[f"DK-U{j}"]] for j in range(1, i)])
+        s[:,dim2id[f"DK-U{i}"]] = s[:,dim2id[f"GP-U{i}"]] & s[:,dim2id[f"GK-U{i}"]] & ~block_DK
+        block_SD = elementwise_any([s[:,dim2id[f"SD-U{j}"]] for j in range(1, i)])
+        s[:,dim2id[f"SD-U{i}"]] = s[:,dim2id[f"KMS-U{i}"]] & ~block_SD
+    s[:,dim2id["DK"]] = elementwise_any([s[:,dim2id[f"DK-U{j}"]] for j in range(1, n+1)])
+    s[:,dim2id["SD"]] = elementwise_any([s[:,dim2id[f"SD-U{j}"]] for j in range(1, n+1)])
+    s[:,dim2id["SMK"]] = s[:,dim2id["DK"]] | s[:,dim2id["SD"]]
+    n_var = len(get_bbSMK_V(n))
+    ret = np.ones((len(E)*N, n_var+1))
+    ret[:, :n_var] = s[:,:n_var]
+    ret[:,-1] = s[:,-1]
+    return ret
 
 def get_bbSMK_SCM(n, u):
+    def vectorized_simulations(E):
+        out = []
+        sub_N = 100_000
+        for i in range(0, len(E), sub_N):
+            sub_E = E[i*sub_N:(i+1)*sub_N]
+            S = vectorized_bbSMK_model(u, sub_E, n)
+            for s in S:
+                out.append((s, int(s[-1]), psi(s)))
+        return out
     return SCM(V=get_bbSMK_V(n),U=get_SMK_U(n),D=[(0,1)] * (6 * n + 1),
-               F=lambda u,e: bbSMK_model(u,e,n),u=u,psi=psi,dag=None)
+               F=lambda u,e: bbSMK_model(u,e,n),u=u,psi=psi,dag=None,
+              sim=vectorized_simulations)
 
 """Noisy SMK"""
 def noise(value, t=.01):

@@ -98,6 +98,7 @@ def get_initial_rules(V, D, v):
 def get_rules(previous_rules, V, D, v, Cs, actual_values, verbose=False):
     # Build new rules on top of the previous ones
     # The previous rules are not valid (i.d. they do not define causes)
+    # if verbose: print(previous_rules, V, D, v, Cs, actual_values)
     if previous_rules is None: return get_initial_rules(V, D, v)
     new_rules = set()
 
@@ -206,7 +207,6 @@ def beam_search(
 
         # Evaluate the rules using the simulation 
         cf_values = do_simulation(simulation, cache, beams)
-        
         # Build the tuples of rule values
         causes, non_causes = split_rules(beams, cf_values, actual_values, epsilon)
 
@@ -234,7 +234,6 @@ def beam_search(
             beams = get_next_beams(non_causes, beam_size, Cs)
         else:
             beams = get_next_beams(non_causes + causes, beam_size, [])
-        
         # Render step output
         render_step(verbose, minimal_causes, non_causes)
 
