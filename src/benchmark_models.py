@@ -1,5 +1,5 @@
 import math, numpy as np
-from utils import generate_subsets, elementwise_any
+from utils import generate_subsets, elementwise_any, elementwise_max
 from sympy import symbols, Equivalent, to_cnf, Or, And, Not
 # from actualcauses import lucb
 from actualcauses_local.scm_class import SCM
@@ -146,7 +146,6 @@ def vectorized_SMK_model(u, E, n, N=1, t=0):
     set_value_vect(s, "SMK", dim2id, s[:,dim2id["DK"]] | s[:,dim2id["SD"]], formated_E, t)
     return s
     
-
 def SMK_model(u:list, e:list[list], n:int):
     V = get_SMK_V(n)
     s = [None] * len(V)
@@ -309,6 +308,35 @@ def mSMK_model(u:list, e:list[list], n:int):
     # print(s)
     return s
 
+def vectorized_mSMK_model(u, E, n, N=1, t=0):
+    formated_E = defaultdict(lambda: [])
+    for i, e in enumerate(E):
+        for var, value in e:
+            formated_E[var].append((slice(i*N,(i+1)*N),value))
+    V = get_SMK_V(n)
+    s = np.zeros((len(E)*N, len(V)), dtype=int)
+    dim2id = dict(zip(V, range(len(V))))
+    for i in range(1,n+1):
+        for dim in ("FS", "FN", "FF", "FDB", "A", "AD"):
+            dim_id = dim2id[f"{dim}-U{i}"]
+            set_value_vect(s, f"{dim}-U{i}", dim2id, u[dim_id], formated_E)
+    for i in range(1,n+1):
+        set_value_vect(s, f"GP-U{i}", dim2id, s[:,dim2id[f"FS-U{i}"]] + s[:,dim2id[f"FN-U{i}"]], formated_E, t)
+        set_value_vect(s, f"GK-U{i}", dim2id, s[:,dim2id[f"FF-U{i}"]] + s[:,dim2id[f"FDB-U{i}"]], formated_E, t)
+        set_value_vect(s, f"KMS-U{i}", dim2id, s[:,dim2id[f"A-U{i}"]] * s[:,dim2id[f"AD-U{i}"]], formated_E, t)
+    for i in range(1,n+1):
+        block_DK = elementwise_max([s[:,dim2id[f"DK-U{j}"]] for j in range(1, i)])
+        set_value_vect(s, f"DK-U{i}", dim2id, 
+                       np.maximum(0, s[:,dim2id[f"GP-U{i}"]] * s[:,dim2id[f"GK-U{i}"]] - block_DK), 
+                                  formated_E, t)
+        block_SD = elementwise_max([s[:,dim2id[f"SD-U{j}"]] for j in range(1, i)])
+        set_value_vect(s, f"SD-U{i}", dim2id, np.maximum(0, s[:,dim2id[f"KMS-U{i}"]] - block_SD), formated_E)
+    set_value_vect(s, "DK", dim2id, elementwise_max([s[:,dim2id[f"DK-U{j}"]] for j in range(1, n+1)]), formated_E, t)
+    set_value_vect(s, "SD", dim2id, elementwise_max([s[:,dim2id[f"SD-U{j}"]] for j in range(1, n+1)]), formated_E, t)
+    set_value_vect(s, "SMK", dim2id, 
+                   np.logical_or(s[:,dim2id["DK"]]>0, s[:,dim2id["SD"]]>0), 
+                   formated_E, t)
+    return s
 
 def get_mSMK_domains(n):
     # FS, FN, FF, FDB, A, AD / GP, GK / KMS / DKu / SDu / DK / SD, SMK
@@ -316,9 +344,22 @@ def get_mSMK_domains(n):
 
 
 def get_mSMK_SCM(n, u):
+    V = get_SMK_V(n)
+    
+    def vectorized_simulations(E):
+        out = []
+        sub_N = 100_000
+        for i in range(0, len(E), sub_N):
+            sub_E = E[i*sub_N:(i+1)*sub_N]
+            S = vectorized_mSMK_model(u, sub_E, n)
+            for s in S:
+                out.append((s, int(s[-1]), psi(s)))
+        return out
+        
     return SCM(V=get_SMK_V(n),U=get_SMK_U(n),
                D=get_mSMK_domains(n),
-        F=lambda u,e: mSMK_model(u,e,n),u=u,psi=psi,dag=get_SMK_DAG(n))
+        F=lambda u,e: mSMK_model(u,e,n),u=u,psi=psi,dag=get_SMK_DAG(n),
+              sim=vectorized_simulations)
 
 # def mSMK_model(u, e, n):
 #     s = [None] * len(mSMK_variables)
