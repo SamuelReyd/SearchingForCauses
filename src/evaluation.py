@@ -25,20 +25,20 @@ def filter_minimality(candidates):
         causes.append(best)
     return causes
 
-def build_ref_causes(data):
-    ref_causes = defaultdict(lambda: [])
-    for datum in data:
-        n_attacker = datum["n_attacker"]
-        for res in datum["results"]:
-            context_repr = int("".join(map(str,res["context"])), 2)
-            candidates = zip(res["causes"], res["rules"], res["scores"])
-            ref_causes[f"{context_repr}-{n_attacker}"] += candidates
-    for key, value in ref_causes.items():
-        min_candidates = filter_minimality(value)
-        min_causes = [elt[0] for elt in min_candidates]
+# def build_ref_causes(data):
+#     ref_causes = defaultdict(lambda: [])
+#     for datum in data:
+#         n_attacker = datum["n_attacker"]
+#         for res in datum["results"]:
+#             context_repr = int("".join(map(str,res["context"])), 2)
+#             candidates = zip(res["causes"], res["rules"], res["scores"])
+#             ref_causes[f"{context_repr}-{n_attacker}"] += candidates
+#     for key, value in ref_causes.items():
+#         min_candidates = filter_minimality(value)
+#         min_causes = [elt[0] for elt in min_candidates]
         
-        ref_causes[key] = {tuple(c) for c in min_causes}
-    return ref_causes
+#         ref_causes[key] = {tuple(c) for c in min_causes}
+#     return ref_causes
 
 # === Evaluation token ===
 def evaluate_smallest(causes, ref_causes):
@@ -116,7 +116,6 @@ def build_ref_causes_bb(data):
             scm = get_bbSMK_SCM(n_attacker, res["context"])
             actual_values = dict(zip(scm.V, scm.v))
             for e in E:
-                print(e)
                 C, W = get_sets(e, actual_values)
                 V, D, v = [], [], []
                 for variable, domain, value in zip(scm.V, scm.D, scm.v):
@@ -126,10 +125,7 @@ def build_ref_causes_bb(data):
                         v.append(value)
                 output = beam_search(V=V, v=v, D=D, simulation=scm.get_input()["simulation"],
                                      max_steps=-1,beam_size=-1, W_R=W)
-                min_Cs = []
-                for values in output:
-                    min_Cs.append([C[dim] for dim in values[3]])
-                min_Cs={tuple(cause) for cause in min_Cs}
+                min_Cs = {tuple(values[3]) for values in output}
                 ref_causes[f"{context_repr}-{n_attacker}"] |= min_Cs
     return ref_causes
 
@@ -156,12 +152,12 @@ def evaluate_SMK(model: Models, exh: Exhaustivness,
     data_base = load_json(prefix+f"results/{model.value}-{exh.value}/{AlgoTypes.BASE.value}.json")
     if exh == Exhaustivness.SMALLEST:
         ref_causes = build_ref_causes_smallest(prefix)
-    elif model == Models.BASE:
+    elif model == Models.BASE or model == Models.NON_BOOLEAN:
         ref_causes = get_exact_causes(prefix)
     elif model == Models.BLACK_BOX:
         ref_causes = build_ref_causes_bb(data_base)
     else:
-        ref_causes = build_ref_causes(data_base + data_struct)
+        raise Exception(f"model {model} not recognized.")
 
     for algo, data in ((AlgoTypes.BASE, data_base),(AlgoTypes.STRUCTURED, data_struct)):
         if data is None: continue
