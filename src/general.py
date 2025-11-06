@@ -97,13 +97,12 @@ def generate_base_contexts_SMK(n_attacker, N, seed=42):
     n_exo_vars = n_attacker * len(exo_vars)
     n_endo_vars = len(get_SMK_V(n_attacker))
     contexts = np.zeros((N,n_exo_vars), dtype=int)
-    s = np.ones(n_endo_vars)
     for n in tqdm(range(N)):
         while True:
             ids = np.arange(n_exo_vars)
             np.random.shuffle(ids)
             contexts[n][ids[:n_exo_vars//2]] = 1
-            SMK_model(s, contexts[n], {}, n_attacker)
+            s = SMK_model(contexts[n], {}, n_attacker)
             if s[-1] and not any([(contexts[n] == contexts[i]).all() for i in range(n-1)]): break
     return contexts
 
