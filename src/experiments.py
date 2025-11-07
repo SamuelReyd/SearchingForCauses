@@ -47,15 +47,15 @@ if __name__ == "__main__":
     print()
         
     # Main experiments - noisy
-    # exh = Exhaustivness.FULL
-    # model = Models.NOISY
-    # for algo in AlgoTypes:
-    #     for do_lucb in (True, False):
-    #         lucb_label = "lucb" if do_lucb else "naive"
-    #         if os.path.isfile(f"results/{model.value}-{exh.value}/{algo.value}-{lucb_label}.json"):
-    #             continue
-    #         run_noisy_SMK(algo, n_attackers, beam_sizes, max_steps, lucb_params, n_seeds, nl, do_lucb)
-    # evaluate_noisy_SMK(prefix="")
+    exh = Exhaustivness.FULL
+    model = Models.NOISY
+    for algo in AlgoTypes:
+        for do_lucb in (True, False):
+            lucb_label = "lucb" if do_lucb else "naive"
+            if os.path.isfile(f"results/{model.value}-{exh.value}/{algo.value}-{lucb_label}.json"):
+                continue
+            run_noisy_SMK(algo, n_attackers, beam_sizes, max_steps, lucb_params, n_seeds, nl, do_lucb)
+    evaluate_noisy_SMK(prefix="")
     
     # Smallest identification
     # for algo in AlgoTypes:
