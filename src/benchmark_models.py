@@ -390,28 +390,6 @@ def bbSMK_model(u, e, n):
     s[dim2id["SD"]] = int(any([s[dim2id[f"SD-U{i}"]] for i in range(1,n+1)]))
     s[dim2id["SMK"]] = int(s[dim2id["DK"]] or s[dim2id["SD"]])
     return s[:len(get_bbSMK_V(n))] + s[-1:]
-    # V = get_bbSMK_V(n)
-    # e = dict(e)
-    # dim2id = dict(zip(V, range(len(V))))
-    # s = [None] * len(V)
-
-    # # Set from exo
-    # for i in range(1,n+1):
-    #     for dim in ("FS", "FN", "FF", "FDB", "A", "AD"):
-    #         dim_id = dim2id[f"{dim}-U{i}"]
-    #         s[dim_id] = e.get(f"{dim}-U{i}", u[dim_id])
-    # GP = [s[dim2id[f"FS-U{i}"]] or s[dim2id[f"FN-U{i}"]] for i in range(1, n+1)]
-    # GK = [s[dim2id[f"FF-U{i}"]] or s[dim2id[f"FDB-U{i}"]] for i in range(1, n+1)]
-    # KMS = [s[dim2id[f"A-U{i}"]] and s[dim2id[f"AD-U{i}"]] for i in range(1, n+1)]
-    # DK = any([gp and gk for gp, gk in zip(GP,GK)])
-    # SD = any(KMS)
-        
-    # # Set SMK
-    # s[dim2id["SMK"]] = e.get(
-    #     dim2id["SMK"], 
-    #     int(DK or SD)
-    # )
-    # return s
 
 def vectorized_bbSMK_model(u, E, n, N=1, t=0):
     formated_E = defaultdict(lambda: [])
