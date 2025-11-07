@@ -39,9 +39,7 @@ if __name__ == "__main__":
     for exh, model, algo in exps:
         if os.path.isfile(f"results/{model.value}-{exh.value}/{algo.value}.json"): 
             continue
-        if model == Models.NON_BOOLEAN: max_steps=3
-        else: max_steps = 7
-        run_SMK(n_attackers, beam_sizes, exh, model, algo, max_steps=max_steps)
+        run_SMK(n_attackers, beam_sizes, exh, model, algo, max_steps=7)
     print("Evaluation...")
     evaluate_SMK(model, exh)
     print()
