@@ -6,35 +6,6 @@ from benchmark_models import SMK_model, get_SMK_V
 from collections.abc import Iterable
 from enum import Enum
 
-# === Hyper parameters ===
-# == General ==
-N = 20
-n_attackers = (2,5,10)
-n_attackers_smallest = [2,  4,  6,  8, 11, 13, 15, 17, 20]
-full_attackers = list(set(n_attackers) | set(n_attackers_smallest))
-beam_sizes = [ 1, 12, 25, 37, 50]
-beam_sizes_smallest = [  1,  11,  22,  33,  44,  55,  66,  77,  88, 100]
-max_steps = 8
-
-# == Noisy global params ==
-nl = 1.5
-n_seeds = 10
-
-# == LUCB params ==
-max_iter_noisy = 20
-
-eps=.65
-lucb_params = {"a": .65, 
-               "cause_eps": .1, 
-               "non_cause_eps": .1, 
-               "beam_eps": .1, 
-               "max_iter": max_iter_noisy, 
-               "verbose": 0, 
-               "init_batch_size": 30,
-               "batch_size": 10,
-               "delta": .05
-               }
-
 # General
 class AlgoTypes(Enum):
     STRUCTURED = "structured"
@@ -88,6 +59,12 @@ def save_json(path, data):
 
 def get_struct_label(struct):
     return "structured" if struct else "base_algo"
+
+def get_file_name(exh, model, algo, heuristics, lucb_label):
+    if len(heuristics) > 1: suffix = "-heuristics"
+    elif lucb_label: suffix = "-"+lucb_label
+    else: suffix = ""
+    return f"{model.value}-{exh.value}/{algo.value}{suffix}.json"
 
 
 # Contexts

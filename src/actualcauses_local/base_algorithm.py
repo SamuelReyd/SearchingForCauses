@@ -95,11 +95,16 @@ def get_initial_rules(V, D, v):
                 rules.append(((feature, value),))
     return rules
 
-def get_rules(previous_rules, V, D, v, Cs, actual_values, verbose=False):
+def filter_instance(V, D, v, I):
+    return zip(*[(variable, domain, value) for variable, domain, value in zip(V, D, v) if variable in I])
+
+def get_rules(previous_rules, V, D, v, actual_values, Cs=[], R=[], verbose=False):
     # Build new rules on top of the previous ones
     # The previous rules are not valid (i.d. they do not define causes)
     # if verbose: print(previous_rules, V, D, v, Cs, actual_values)
-    if previous_rules is None: return get_initial_rules(V, D, v)
+    if previous_rules is None: 
+        rules = get_initial_rules(V, D, v)
+        return [beam + R for beam in sorted(rules)]
     new_rules = set()
 
     # Iterate through the previous rules
@@ -123,7 +128,7 @@ def get_rules(previous_rules, V, D, v, Cs, actual_values, verbose=False):
                 new_rule = rule + ((feature, value),)
                 # Add the new rule to the next rules
                 new_rules.add(tuple(sorted(new_rule)))
-    return sorted(new_rules)
+    return [beam + R for beam in sorted(new_rules)]
 
 def get_next_beams(non_causes, beam_size, Cs):
     non_causes = [v for v in non_causes if not any([c <= v[3] for c in Cs])]
@@ -171,7 +176,7 @@ def do_simulation(simulation, cache, beams):
 def beam_search(
     v, D, simulation, V, # SCM
     max_steps=5, beam_size=10, epsilon=.05, early_stop=False, max_time=None, # Parameters
-    W_R=None, Cs=None, cache=None, minimality=True, # Additional parameters when running for sub-instance
+    R=None, Cs=None, cache=None, minimality=True, I=None, # Additional parameters when running for sub-instance
     verbose=0, 
     ):
     # verbose: 
@@ -180,8 +185,10 @@ def beam_search(
     #  >= 3 -> adds all causes + tqdm for get_rules
     
     all_causes = []
-    if W_R is None: W_R = tuple()
-    actual_values = dict(zip(V, v)) | dict(W_R)
+    if R is None: R = tuple()
+    actual_values = dict(zip(V, v))
+    if I is not None: V, D, v = filter_instance(V,D, v, I)
+    # print(I, V)
     if not minimality: full_interventions = []
     init_time = time.time()
     beams = None
@@ -194,9 +201,9 @@ def beam_search(
         if verbose >= 2: print(f"{f'Step {t}':=^30}")
             
         # Create the rules for step t base on the ones from t-1, we use the initial ones if t==1
-        beams = get_rules(beams, V, D, v, Cs if minimality else [], actual_values, verbose >= 3)
-        if t == 1 and W_R:
-            beams = [beam + W_R for beam in beams]
+        beams = get_rules(beams, V, D, v, actual_values, 
+                          Cs=Cs if minimality else [], 
+                          R=R, verbose=verbose >= 3)
 
         # Check for early stop
         if check_early_stop(beams, early_stop, all_causes, max_time, init_time):
@@ -208,34 +215,34 @@ def beam_search(
         # Evaluate the rules using the simulation 
         cf_values = do_simulation(simulation, cache, beams)
         # Build the tuples of rule values
-        causes, non_causes = split_rules(beams, cf_values, actual_values, epsilon)
+        AC2, non_AC2 = split_rules(beams, cf_values, actual_values, epsilon)
 
         # Filter causes to keep only minimal ones
-        minimal_causes = filter_minimality(causes)
+        causes = filter_minimality(AC2)
 
         # Save minimal causes
         if minimality:
-            all_causes += minimal_causes
+            all_causes += causes
         # Search for all counterfactual interventions:
         else:
             # Filter non-minimal propagated causes
-            all_causes = minimal_merge(all_causes, minimal_causes)
+            all_causes = minimal_merge(all_causes, causes)
             # Save all counterfactual interventions
-            full_interventions += causes
+            full_interventions += AC2
             # Remove duplicates but not non-minimal interventions
-            full_interventions = remove_duplicates(full_interventions)
+            # full_interventions = remove_duplicates(full_interventions)
 
         # Save the cause sets
-        for rule_value in minimal_causes:
+        for rule_value in causes:
             Cs.append(rule_value[3])
 
         # Build next beams
         if minimality:
-            beams = get_next_beams(non_causes, beam_size, Cs)
+            beams = get_next_beams(non_AC2, beam_size, Cs)
         else:
-            beams = get_next_beams(non_causes + causes, beam_size, [])
+            beams = get_next_beams(non_AC2 + AC2, beam_size, [])
         # Render step output
-        render_step(verbose, minimal_causes, non_causes)
+        render_step(verbose, causes, non_AC2)
 
     # Render final result
     if verbose:

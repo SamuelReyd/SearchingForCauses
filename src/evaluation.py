@@ -11,35 +11,6 @@ from benchmark_models import get_noisy_suzzy_SCM, get_avg_nSMK_SCM, get_lucb_nSM
 from actualcauses_local.base_algorithm import beam_search, get_sets
 from actualcauses_local.iterative_subinstance_algorithm import iterative_identification
 
-# === General ===
-def filter_minimality(candidates):
-    Cs = [values[0] for values in candidates]
-    candidates = [values for values in candidates if not any([set(c) < set(values[0]) for c in Cs])]
-
-    Cs = defaultdict(lambda: [])
-    for values in candidates:
-        Cs[tuple(values[0])].append(values)
-    causes = []
-    for cands in Cs.values():
-        best = min(cands, key=lambda rule_values: (len(rule_values[1]),rule_values[2]))
-        causes.append(best)
-    return causes
-
-# def build_ref_causes(data):
-#     ref_causes = defaultdict(lambda: [])
-#     for datum in data:
-#         n_attacker = datum["n_attacker"]
-#         for res in datum["results"]:
-#             context_repr = int("".join(map(str,res["context"])), 2)
-#             candidates = zip(res["causes"], res["rules"], res["scores"])
-#             ref_causes[f"{context_repr}-{n_attacker}"] += candidates
-#     for key, value in ref_causes.items():
-#         min_candidates = filter_minimality(value)
-#         min_causes = [elt[0] for elt in min_candidates]
-        
-#         ref_causes[key] = {tuple(c) for c in min_causes}
-#     return ref_causes
-
 # === Evaluation token ===
 def evaluate_smallest(causes, ref_causes):
     if not len(causes): return {"accuracy": 0}
@@ -59,7 +30,7 @@ def evaluate_full(causes, ref_causes):
                 n_non_minimal += 1
                 avg_overshot += len(cause) - len(ref_cause)
                 break
-            if ref_cause == cause:
+            if set(ref_cause) == set(cause):
                 n_minimal += 1
                 break
         else:
@@ -86,24 +57,13 @@ def evaluate_full(causes, ref_causes):
 evaluators = {Exhaustivness.FULL: evaluate_full, Exhaustivness.SMALLEST: evaluate_smallest}
 
 # === Reference causes ===
-def get_exact_causes(prefix=""):
+def get_exact_causes(data):
     ref_causes = {}
-    data = load_json(prefix+"results/base-exact/structured.json")
     for datum in data:
         n_attacker = datum["n_attacker"]
         for res in datum["results"]:
             context_repr = int("".join(map(str,res["context"])), 2)
-            ref_causes[f"{context_repr}-{n_attacker}"] = {tuple(c) for c in res["causes"]}
-    return ref_causes
-
-def build_ref_causes_smallest(prefix=""):
-    ref_causes = {}
-    data = load_json(prefix+"results/base-smallest/ILP.json")
-    for datum in data:
-        n_attacker = datum["n_attacker"]
-        for res in datum["results"]:
-            context_repr = int("".join(map(str,res["context"])), 2)
-            ref_causes[f"{context_repr}-{n_attacker}"] = set([tuple(res["causes"])])
+            ref_causes[f"{context_repr}-{n_attacker}"] = {tuple(sorted(c)) for c in res["causes"]}
     return ref_causes
 
 def build_ref_causes_bb(data):
@@ -117,135 +77,43 @@ def build_ref_causes_bb(data):
             actual_values = dict(zip(scm.V, scm.v))
             for e in E:
                 C, W = get_sets(e, actual_values)
-                V, D, v = [], [], []
-                for variable, domain, value in zip(scm.V, scm.D, scm.v):
-                    if variable in C:
-                        V.append(variable)
-                        D.append(domain)
-                        v.append(value)
-                output = beam_search(V=V, v=v, D=D, simulation=scm.get_input()["simulation"],
-                                     max_steps=-1,beam_size=-1, W_R=W)
-                min_Cs = {tuple(values[3]) for values in output}
+                R = tuple([(v,actual_values[v]) for v in W])
+                scm.find_causes(I=C, max_steps=-1, beam_size=-1, R=R)
+                min_Cs = set(scm.causes_hashable)
                 ref_causes[f"{context_repr}-{n_attacker}"] |= min_Cs
     return ref_causes
 
-def compute_ref_causes(u):
-    n_attacker = len(u)//6
-    variables = get_SMK_dim_labels(n_attacker)
-    
-    SCM = make_SCM(variables, u, SMK_model, n_attacker=n_attacker)
-    dag, init_var_ids = build_DAG(n_attacker, SCM["variables"])
-
-    return iterative_identification(**SCM, 
-                                     dag=dag, 
-                                     init_var_ids=init_var_ids,
-                                     max_steps=-1, beam_size=-1, 
-                                     verbose=0, early_stop=False)
-
 # === General evaluations ===
-def evaluate_SMK(model: Models, exh: Exhaustivness,
-                 prefix=""):
-
-    data_struct = None
-    if model != Models.BLACK_BOX:
-        data_struct = load_json(prefix+f"results/{model.value}-{exh.value}/{AlgoTypes.STRUCTURED.value}.json")
-    data_base = load_json(prefix+f"results/{model.value}-{exh.value}/{AlgoTypes.BASE.value}.json")
-    if exh == Exhaustivness.SMALLEST:
-        ref_causes = build_ref_causes_smallest(prefix)
-    elif model == Models.BASE or model == Models.NON_BOOLEAN:
-        ref_causes = get_exact_causes(prefix)
-    elif model == Models.BLACK_BOX:
-        ref_causes = build_ref_causes_bb(data_base)
+def evaluate_SMK(exh, model, algo, beam_sizes, n_attackers, heuristics, lucb_label, max_steps, folder="results/"):
+    file_name = get_file_name(exh, model, algo, heuristics, lucb_label)
+    if not os.path.isfile(folder+file_name): 
+        print(f"Could not evaluation file {file_name}")
+        return 
+    data = load_json(folder+file_name)
+        
+    if model == Models.BLACK_BOX:
+        ref_causes = build_ref_causes_bb(data)
     else:
-        raise Exception(f"model {model} not recognized.")
-
-    for algo, data in ((AlgoTypes.BASE, data_base),(AlgoTypes.STRUCTURED, data_struct)):
-        if data is None: continue
-        for datum in tqdm(data):
-            n_attacker, beam_size = datum["n_attacker"], datum["beam_size"]
-            
-            for res in datum["results"]:
-                context_repr = int("".join(map(str,res["context"])), 2)
-                ref = ref_causes[f"{context_repr}-{n_attacker}"]
-                pred = {tuple(cause) for cause in res["causes"]}
-                evaluator = evaluators[exh]
-                measures = evaluator(pred, ref)
-                res |= measures
-                metrics = list(measures.keys())
-            for m in metrics + ["time"]:
-                datum[m+"-avg"] = float(np.mean([res[m] for res in datum["results"]]))
-                datum[m+"-std"] = float(np.std([res[m] for res in datum["results"]]))
-        
-        
-        save_json(prefix+f"results/{model.value}-{exh.value}/{algo.value}.json", data)
-
-def evaluate_noisy_SMK(prefix=""):
-    # Load Refs
-    exh = Exhaustivness.FULL
-    data_ref = []
-    for algo in AlgoTypes:
-        data_ref += load_json(prefix+f"results/{Models.BASE.value}-{exh.value}/{algo.value}.json")
-    ref_causes = get_exact_causes(prefix)
-
-    for algo in AlgoTypes:
-        for lucb_label in ('lucb','naive'):
-            file_name = prefix+f"results/{Models.NOISY.value}-{exh.value}/{algo.value}-{lucb_label}.json"
-            if not os.path.isfile(file_name): continue
-            data = load_json(file_name)
-            for datum in tqdm(data):
-                n_attacker, beam_size = datum["n_attacker"], datum["beam_size"]
-                
-                for res in datum["results"]:
-                    context_repr = int("".join(map(str,res["context"])), 2)
-                    ref = ref_causes[f"{context_repr}-{n_attacker}"]
-                    pred = {tuple(cause) for cause in res["causes"]}
-                    evaluator = evaluators[exh]
-                    measures = evaluator(pred, ref)
-                    res |= measures
-                    metrics = list(measures.keys())
-                for m in metrics + ["time"]:
-                    datum[m+"-avg"] = float(np.mean([res[m] for res in datum["results"]]))
-                    datum[m+"-std"] = float(np.std([res[m] for res in datum["results"]]))
-        
-        
-            save_json(file_name, data)
-
-def evaluate_params_SMK(algo,
-                        u=[0, 1, 1, 0, 1, 1, 1, 1, 1, 1, 1, 0, 0, 1, 0, 0, 0, 0],
-                        prefix=""):
-    ref_causes = compute_ref_causes(u)
-    exh = Exhaustivness.FULL
-    model = Models.NOISY 
-    data = load_json(prefix+f"results/noisy-params/{algo.value}.json")
-    for datum in tqdm(data):
+        if exh == Exhaustivness.SMALLEST:
+            ref_data = load_json(folder+"base-smallest/ILP.json")
+        else: 
+            ref_data = load_json(folder+"base-exact/structured.json")
+        ref_causes = get_exact_causes(ref_data)
+    for datum in data:
+        n = datum["n_attacker"]
         for res in datum["results"]:
-            ref = {tuple(cause[3]) for cause in ref_causes}
+            context_repr = int("".join(map(str,res["context"])), 2)
+            ref = ref_causes[f"{context_repr}-{n}"]
             pred = {tuple(cause) for cause in res["causes"]}
             evaluator = evaluators[exh]
             measures = evaluator(pred, ref)
-            res |= measures
-            metrics = list(measures.keys())
-        for m in metrics + ["time"]:
-            datum[m+"-avg"] = float(np.mean([res[m] for res in datum["results"]]))
-            datum[m+"-std"] = float(np.std([res[m] for res in datum["results"]]))
-    save_json(prefix+f"results/noisy-params/{algo.value}.json", data)
+            res["metrics"] = measures
+    
+    save_json(folder+file_name, data)
 
-def evaluate_ILP(prefix):
-    data = load_json(prefix+"results/base-smallest/ILP.json")
+def evaluate_ILP(folder="results/"):
+    data = load_json(folder+"base-smallest/ILP.json")
     for datum in data:
-        datum["time-avg"] = float(np.mean([res["time"] for res in datum["results"]]))
-        datum["time-std"] = float(np.std([res["time"] for res in datum["results"]]))
-        datum["accuracy-avg"] = 1.0
-        datum["accuracy-std"] = 0.0
-    save_json(prefix+"results/base-smallest/ILP.json", data)
-
-
-if __name__ == "__main__":
-    print("Evaluation deterministic full")
-    # Evaluation determinist full
-    for model in (Models.BASE, Models.NON_BOOLEAN, Models.BLACK_BOX):
-        evaluate_SMK(model, Exhaustivness.FULL, prefix="")
-    # Evaluation noisy
-    # evaluate_SMK(model, Exhaustivness.FULL, prefix="")
-    # Evaluation smallest
-    # evaluate_SMK(Models.BASE, Exhaustivness.SMALLEST, prefix="")
+        for res in datum["results"]:
+            res["metrics"] = {"accuracy": 1.0}
+    save_json(folder+"base-smallest/ILP.json", data)

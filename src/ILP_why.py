@@ -1,10 +1,64 @@
 import gurobipy as gp
 from gurobipy import GRB
 from sympy import symbols, Equivalent, to_cnf, Or, And, Not
-from benchmark_models import get_sympy_SMK
 
 # This file reproduces the algorithm from https://github.com/amjadKhalifah/HP2SAT1.0/tree/hp-optimization-library
 
+### Sympy model
+def get_sympy_SMK(n):
+    leaf_vars = ["FS", "FN", "FF", "FDB", "A", "AD"]
+    node_vars = ["GP", "GK", "KMS", "DK", "SD"]
+    exo_var_labels = [
+        f"{dim.lower()}-u{i}" \
+    for dim in leaf_vars \
+    for i in range(1,n+1)
+    ]
+    var_labels = [
+            f"{dim}-U{i}" \
+        for dim in leaf_vars + node_vars \
+        for i in range(1,n+1)
+        ]
+    var_labels += ["DK", "SD", "SMK"]
+    var_labels += exo_var_labels
+    label2id = {label: i for i,label in enumerate(var_labels)}
+    variables = symbols(var_labels)
+    target = variables[label2id["SMK"]]
+    equations = {}
+    # Set leaves
+    for exo_var_label in exo_var_labels:
+        exo_var_id = label2id[exo_var_label]
+        endo_var_id = label2id[exo_var_label.upper()]
+        equations[variables[endo_var_id]] = variables[exo_var_id]
+    # Set depth 1
+    for i in range(1,n+1):
+        GP, FS, FN, GK, FF, FDB, KMS, A, AD = [
+            variables[label2id[f"{var_name}-U{i}"]] for \
+            var_name in "GP, FS, FN, GK, FF, FDB, KMS, A, AD".split(", ")
+        ]
+        
+        equations[GK] = FF | FDB
+        equations[KMS] = A & AD
+        equations[GP] = FS | FN 
+    # Set DK
+    for i in range(1,n+1):
+        equations[variables[label2id[f"DK-U{i}"]]] = \
+        variables[label2id[f"GP-U{i}"]] & variables[label2id[f"GK-U{i}"]] &\
+        And(*[~variables[label2id[f"DK-U{j}"]] for j in range(1, i)])
+    # Set SD
+    for i in range(1,n+1):
+        equations[variables[label2id[f"SD-U{i}"]]] = \
+        variables[label2id[f"KMS-U{i}"]] &\
+        And(*[~variables[label2id[f"SD-U{j}"]] for j in range(1, i)])
+    # Set global DK
+    equations[variables[label2id["DK"]]] = \
+    Or(*[variables[label2id[f"DK-U{i}"]] for i in range(1, n+1)])
+    # Set global SD
+    equations[variables[label2id["SD"]]] = \
+    Or(*[variables[label2id[f"SD-U{i}"]] for i in range(1, n+1)])
+    # Set SMK
+    equations[variables[label2id["SMK"]]] = \
+    variables[label2id["SD"]] | variables[label2id["DK"]]
+    return variables, equations, variables[label2id["SMK"]]
 #### Sympy setup
 # Extract clauses from the CNF formula
 def extract_clauses(expr):
@@ -105,11 +159,10 @@ def sign_lit(var, str2var):
 def get_gerubi_options(prefix=""):
     with open(prefix+"gurobi.lic") as file:
         lines = file.read().split("\n")
-    options = dict(map(lambda line: line.split("="),lines[-4:-1]))
+    options = dict(map(lambda line: line.split("="),lines))
     options["LICENSEID"] = int(options["LICENSEID"])
     return options
 
-    
 def get_causes_from_model(model, sp_vars, target):
     C, W = [], []
     for var in sp_vars:
@@ -193,8 +246,8 @@ def add_vars_to_model(model, sp_vars, u, target):
 def ilp_why(endo_variables, u, target, G_cnf, prefix, verbose):
     with gp.Env(empty=True) as env:
         params = get_gerubi_options(prefix)
-        for param, value in params.items():
-            env.setParam(param, value)
+        for param in ("LICENSEID",):
+            env.setParam(param, params[param])
         env.setParam('OutputFlag', 0)
         env.setParam('LogToConsole', 0)
         env.start()

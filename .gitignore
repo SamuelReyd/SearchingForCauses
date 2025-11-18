@@ -13,3 +13,5 @@ env/*
 *.gif
 *.npy
 *.pkl
+results*
+gurobi.lic
