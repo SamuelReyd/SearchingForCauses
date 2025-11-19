@@ -150,6 +150,7 @@ def lucb(evaluator, rules, beam_size, a=.05, beam_eps=.1, cause_eps=.01, non_cau
         # Compute values
         E = [rules[arm] for arm in arms]
         values_batchs = evaluator(E, bs)
+        values_batchs = values_batchs.reshape(len(E), bs, -1)
         for arm, values_batch in zip(arms, values_batchs):
             # Update n 
             n_old = stats[n,arm]
@@ -273,4 +274,5 @@ def lucb(evaluator, rules, beam_size, a=.05, beam_eps=.1, cause_eps=.01, non_cau
         print(f"n_samples={stats[n]}")
     if lucb_info is not None:
         lucb_info["n_calls"] += int(stats[n].sum())
-    return [(stats[:,i], float(stats[phi_m,i]), float(stats[psi_m,i])) for i in range(n_arms)]
+    return stats[[phi_m,psi_m]].T
+    # return [(stats[:,i], float(stats[phi_m,i]), float(stats[psi_m,i])) for i in range(n_arms)]

@@ -1,7 +1,7 @@
-import numpy as np, json, os
+import numpy as np, json, os, time
 from tqdm import tqdm
 
-from benchmark_models import SMK_model, get_SMK_V
+from benchmark_models import SMKModel, get_SMK_V
 
 from collections.abc import Iterable
 from enum import Enum
@@ -66,6 +66,10 @@ def get_file_name(exh, model, algo, heuristics, lucb_label):
     else: suffix = ""
     return f"{model.value}-{exh.value}/{algo.value}{suffix}.json"
 
+def time_fn(fn, *args, **kargs):
+    t = time.perf_counter()
+    res = fn(*args, **kargs)
+    return res, time.perf_counter() - t 
 
 # Contexts
 def generate_base_contexts_SMK(n_attacker, N, seed=42):
@@ -75,11 +79,12 @@ def generate_base_contexts_SMK(n_attacker, N, seed=42):
     n_endo_vars = len(get_SMK_V(n_attacker))
     contexts = np.zeros((N,n_exo_vars), dtype=int)
     for n in tqdm(range(N)):
+        model = SMKModel(n)
         while True:
             ids = np.arange(n_exo_vars)
             np.random.shuffle(ids)
             contexts[n][ids[:n_exo_vars//2]] = 1
-            s = SMK_model(contexts[n], {}, n_attacker)
+            s = model(contexts[n], {})
             if s[-1] and not any([(contexts[n] == contexts[i]).all() for i in range(n-1)]): break
     return contexts
 

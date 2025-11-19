@@ -3,10 +3,9 @@ from tqdm import tqdm
 
 from collections import defaultdict
 
-from binary_models import *
+from general import *
 from general import Exhaustivness, Models, AlgoTypes
-from benchmark_models import SMK_model, get_SMK_V, get_bbSMK_SCM
-from benchmark_models import get_noisy_suzzy_SCM, get_avg_nSMK_SCM, get_lucb_nSMK_SCM
+from benchmark_models import get_bbSMK_SCM
 # from actualcauses import beam_search, iterative_identification
 from actualcauses_local.base_algorithm import beam_search, get_sets
 from actualcauses_local.iterative_subinstance_algorithm import iterative_identification

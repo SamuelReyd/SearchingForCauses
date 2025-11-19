@@ -12,7 +12,8 @@ n_attackers_smallest = [2,3,4,5,6,7]
 full_attackers = list(set(n_attackers) | set(n_attackers_smallest))
 beam_sizes = [ 1, 50, 100, 150, 200, 250, 300]
 # beam_sizes = [ 1, 25, 50, 75, 100, 125, 150]
-beam_sizes = [ 5, 10, 15, 20, 25, 30, 35, 40, 45, 50]
+# beam_sizes = [ 5, 10, 15, 20, 25, 30, 35, 40, 45, 50]
+beam_sizes = [4,8,16,32,64,128,256,512]
 
 # beam_sizes_smallest = [  1,  11,  22,  33,  44,  55,  66,  77,  88, 100]
 max_steps = 7

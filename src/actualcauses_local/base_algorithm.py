@@ -32,7 +32,7 @@ def get_sets(rule, actual_values):
     return C, W
 
 def sort_key(rule_values):
-    _, rule_output, rule_score, C, W, _ = rule_values
+    _, rule_output, rule_score, C, W = rule_values
     return (rule_score, len(C), C, len(W), W)
 
 def format_value(value):
@@ -44,7 +44,7 @@ def format_value(value):
         return f"{value}"
 
 def get_rule_desc(rule_values, show_score=False):
-    rule, output, score, C, W, _ = rule_values
+    rule, output, score, C, W = rule_values
     dim2value = dict(rule)
     C = {c:format_value(dim2value[c]) for c in C}
     W = {w:format_value(dim2value[w]) for w in W}
@@ -143,9 +143,9 @@ def get_next_beams(non_causes, beam_size, Cs):
 
 def split_rules(beams, cf_values, actual_values, epsilon):
     causes, non_causes = [], []
-    for rule, (cf_state, cf_output, cf_score) in zip(beams, cf_values):
+    for rule, (cf_output, cf_score) in zip(beams, cf_values):
         C, W = get_sets(rule, actual_values)
-        rule_value = (rule, cf_output, cf_score, C, W, cf_state)
+        rule_value = (rule, float(cf_output), float(cf_score), C, W)
 
         # Save causes and keep n best non-causes for next step
         if cf_output < epsilon: 

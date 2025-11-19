@@ -2,11 +2,11 @@ from collections.abc import Iterable
 import time
 from .base_algorithm import beam_search, show_rules
 from .iterative_subinstance_algorithm import iterative_identification
-from .simulator import Simulator
+from .system_model import SystemModel
 from typing import Any
 
 class SCM:
-    def __init__(self, V:list[str], U:list[str], D:list[list], u:list
+    def __init__(self, V:list[str], U:list[str], D:list[list], u:list,
                  model:SystemModel, dag:list[list]=None, v:list=None, ):
         """
         SCM object that includes everything needed to execute the algorithms
@@ -21,10 +21,10 @@ class SCM:
 
             args: V, U, D, u, dag
         """
-        
         # Mandatory parameters
         self.V = V
         self.U = U
+        self.model = model
         if isinstance(D[0], Iterable):
             self.D = D
         else:
@@ -36,7 +36,6 @@ class SCM:
             self.v = v
             
         # Interventions and evaluation functions
-        self.model = model
         self.dag = dag
         self.init_vars = dag[V[-1]] if dag is not None else None
         
@@ -49,7 +48,7 @@ class SCM:
         self.n_calls = None
     
     def __call__(self, e:list[tuple[str,Any]]) -> list[Any]:
-        return self.model.apply(self.u, e)
+        return self.model(self.u, e)
         
     def evaluate_batch(self, E: list[list[tuple[str,Any]]], N:int=1) -> list[tuple[float,float]]:
         return self.model.evaluate_batch(self.u, E, N)
@@ -65,7 +64,7 @@ class SCM:
 
     def find_causes(self, ISI=False, **kwargs):
         t = time.time()
-        self.F.n_calls = 0
+        self.model.n_calls = 0
         if ISI:
             out = iterative_identification(**self.get_input(False), **kwargs)
         else:
@@ -76,8 +75,8 @@ class SCM:
         self.causes_hashable = [tuple(sorted(elt)) for elt in self.causes]
         self.witnesses = [elt[4] for elt in out]
         self.interventions = [elt[0] for elt in out]
-        self.n_calls = self.F.n_calls
+        self.n_calls = self.model.n_calls
         
     def show_indentification_result(self):
-        print(f"Found {len(self.causes)} causes in {self.identification_time:.3f}s\n")
+        print(f"Found {len(self.causes)} causes in {self.identification_time:.3f}s with {self.n_calls} model calls\n")
         show_rules(self.identification_output)

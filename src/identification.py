@@ -5,7 +5,7 @@ from itertools import product
 from collections import defaultdict
 
 from binary_models import *
-from benchmark_models import SMK_model, get_SMK_SCM, get_SMK_V, get_mSMK_SCM, get_bbSMK_SCM, get_avg_nSMK_SCM, get_lucb_nSMK_SCM
+from benchmark_models import SMKModel, get_SMK_SCM, get_SMK_V, get_mSMK_SCM, get_bbSMK_SCM, get_avg_nSMK_SCM, get_lucb_nSMK_SCM
 # from actualcauses import beam_search, iterative_identification
 from actualcauses_local.base_algorithm import beam_search
 from actualcauses_local.iterative_subinstance_algorithm import iterative_identification
@@ -68,7 +68,8 @@ def run_one_SMK(contexts, exh, model, algo, bs, n, heuristic, lucb_label,
         early_stop = (exh == Exhaustivness.SMALLEST)
         u = u.tolist()
         # Adapt on the version of the SCM
-        if model == Models.BASE: scm = get_SMK_SCM(n, u, heuristics_refs[heuristic])
+        if heuristic is not None: scm = get_SMK_SCM(n, u, heuristics_refs[heuristic])
+        elif model == Models.BASE: scm = get_SMK_SCM(n, u)
         elif model == Models.NON_BOOLEAN: scm = get_mSMK_SCM(n, u)
         elif model == Models.BLACK_BOX: scm = get_bbSMK_SCM(n, u)
         elif model == Models.NOISY: 
@@ -85,6 +86,7 @@ def run_one_SMK(contexts, exh, model, algo, bs, n, heuristic, lucb_label,
         res = {
             "rules": serialize_interventions(scm.interventions),
             "causes": scm.causes_hashable,
+            "n_calls": scm.n_calls,
             "context": u,
             "time": scm.identification_time,
             "seed": seed
@@ -128,7 +130,7 @@ def run_ILP_SMK(n_attackers, prefix=""):
             }
         for u in tqdm(contexts):
             u = [int(elt) for elt in u]
-            s = SMK_model(u, {}, n)
+            s = SMKModel(n)(u, {})
             (C, W), t = time_fn(run_ilp_SMK, n, s, u, prefix=prefix)
             data["results"].append({
                     "rules": [serialize_symbols_values(C, W, s, variables)],
