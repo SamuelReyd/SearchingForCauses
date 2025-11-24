@@ -141,7 +141,7 @@ class SMKModel(BaseNumpyModel):
         for i in range(1,self.n+1):
             self[f"GP-U{i}"] = self[f"FS-U{i}"] | self[f"FN-U{i}"]
             self[f"GK-U{i}"] = self[f"FF-U{i}"] | self[f"FDB-U{i}"]
-            self[f"KMS-U{i}"] = self[f"A-U{i}"] | self[f"AD-U{i}"]
+            self[f"KMS-U{i}"] = self[f"A-U{i}"] & self[f"AD-U{i}"]
         for i in range(1,self.n+1):
             block = elementwise_any([self[f"DK-U{j}"] for j in range(1, i)])
             self[f"DK-U{i}"] = self[f"GP-U{i}"] & self[f"GK-U{i}"] & ~block
@@ -194,7 +194,7 @@ mSMK_variables = smk_base_vars_users + ["SMK"]
 
 class mSMKModel(SMKModel):
     def __init__(self, n, phi=None, psi=None):
-        super().__init__(n, phi, psi, object)
+        super().__init__(n, phi, psi, int)
     
     def simulate(self, u):
         for i in range(1,self.n+1):
@@ -205,10 +205,10 @@ class mSMKModel(SMKModel):
             self[f"GK-U{i}"] = self[f"FF-U{i}"] + self[f"FDB-U{i}"]
             self[f"KMS-U{i}"] = self[f"A-U{i}"] * self[f"AD-U{i}"]
         for i in range(1,self.n+1):
-            block = elementwise_any([self[f"DK-U{j}"]>0 for j in range(1, i)]) if i > 1 else 0
-            self[f"DK-U{i}"] = (self[f"GP-U{i}"] * self[f"GK-U{i}"])>0 & ~block
+            block = elementwise_any([self[f"DK-U{j}"]>0 for j in range(1, i)]) if i > 1 else np.False_
+            self[f"DK-U{i}"] = ((self[f"GP-U{i}"] * self[f"GK-U{i}"])>0) & ~block
         for i in range(1, self.n+1):
-            block = elementwise_any([self[f"SD-U{j}"]>0 for j in range(1, i)]) if i > 1 else 0
+            block = elementwise_any([self[f"SD-U{j}"]>0 for j in range(1, i)]) if i > 1 else np.False_
             self[f"SD-U{i}"] = self[f"KMS-U{i}"] & ~block
         self["DK"] = elementwise_any([self[f"DK-U{i}"] for i in range(1,self.n+1)])
         self["SD"] = elementwise_any([self[f"SD-U{i}"] for i in range(1,self.n+1)])
@@ -256,7 +256,7 @@ class bbSMKModel(BaseNumpyModel):
 
 
 def get_bbSMK_SCM(n, u):
-    return SCM(V=get_bbSMK_V(n),U=get_SMK_U(n),D=[(0,1)] * (6 * n + 1),u=u,dag=None,model=bbSMKModel(n))
+    return SCM(V=get_bbSMK_V(n),U=get_SMK_U(n),D=[(0,1)] * (6 * n + 1),u=u,dag=None,model=SMKModel(n))
 
 """Noisy SMK"""
 class AvgRockThrowingModel(AverageNumpyModel):
