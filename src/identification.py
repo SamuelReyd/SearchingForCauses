@@ -74,7 +74,6 @@ def run_one_SMK(contexts, exh, model, algo, bs, n, heuristic, lucb_label,
         elif model == Models.BLACK_BOX: scm = get_bbSMK_SCM(n, u)
         elif model == Models.NOISY: 
             params = lucb_params | {"beam_size": bs}
-            params["lucb_info"] = defaultdict(lambda: 0)
             if lucb_label == "lucb": scm = get_lucb_nSMK_SCM(n, u, nl, params)
             else: scm = get_avg_nSMK_SCM(n, u, lucb_params["max_iter"], nl)
         else:

@@ -27,7 +27,7 @@ lucb_params = {"a": .65,
                "cause_eps": .1, 
                "non_cause_eps": .1, 
                "beam_eps": .1, 
-               "max_iter": 20, 
+               "max_iter": 50, 
                "verbose": 0, 
                "init_batch_size": 30,
                "batch_size": 10,
@@ -37,6 +37,8 @@ lucb_params = {"a": .65,
 # Define experiments and parameters
 exps = (
     # exh, model, algo, beam_sizes, n_attackers, heuristics, lucb_label
+    # Exact results
+    (Exhaustivness.EXACT, Models.BASE, AlgoTypes.STRUCTURED, [-1], n_attackers, [None], None, -1),
     # Smallest
     (Exhaustivness.SMALLEST, Models.BASE, AlgoTypes.BASE, beam_sizes, n_attackers_smallest, [None], None, -1),
     (Exhaustivness.SMALLEST, Models.BASE, AlgoTypes.STRUCTURED, beam_sizes, n_attackers_smallest, [None], None, -1),
@@ -53,8 +55,6 @@ exps = (
     (Exhaustivness.FULL, Models.NOISY, AlgoTypes.STRUCTURED, beam_sizes, n_attackers, [None], "lucb", 7),
     (Exhaustivness.FULL, Models.NOISY, AlgoTypes.BASE, beam_sizes, n_attackers, [None], "naive", 7),
     (Exhaustivness.FULL, Models.NOISY, AlgoTypes.BASE, beam_sizes, n_attackers, [None], "lucb", 7),
-    # Exact results
-    (Exhaustivness.EXACT, Models.BASE, AlgoTypes.STRUCTURED, [-1], n_attackers, [None], None, -1),
     )
     
 # Main
