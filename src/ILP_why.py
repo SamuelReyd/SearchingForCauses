@@ -59,68 +59,8 @@ def get_sympy_SMK(n):
     equations[variables[label2id["SMK"]]] = \
     variables[label2id["SD"]] | variables[label2id["DK"]]
     return variables, equations, variables[label2id["SMK"]]
-#### Sympy setup
-# Extract clauses from the CNF formula
-def extract_clauses(expr):
-    """Extract clauses from a CNF expression."""
-    if isinstance(expr, Or):  # A single disjunction (clause)
-        return [expr]
-    elif isinstance(expr, And):  # Multiple clauses
-        return list(expr.args)
-    else:  # A single literal
-        return [expr]
 
-# Convert the symbolic clauses to integers for the SAT solver
-def clause_to_str(clause):
-    """Convert a symbolic clause to integers."""
-    if isinstance(clause, Or):  # Disjunction
-        return [lit_to_str(arg) for arg in clause.args]
-    else:  # Single literal
-        return [lit_to_str(clause)]
 
-def lit_to_str(literal):
-    """Convert a symbolic literal to an integer."""
-    if literal.is_Symbol:  # Positive literal
-        return literal.name  # Assume variable names are x1, x2, etc.
-    elif isinstance(literal, Not):  # Negated literal
-        return "~" + literal.args[0].name
-    else:
-        raise ValueError(f"Unexpected literal format: {literal}")
-
-def get_identifiers(clauses_str):
-    vars = list({var if not var.startswith("~") else var[1:] for clause in clauses_str for var in clause})
-    return dict(zip(vars, range(1, len(vars)+1)))
-
-def clauses_str_to_int(clauses_str, var2int):
-    return [[var2int[var] if not var.startswith("~") else -var2int[var[1:]] for var in clause] for clause in clauses_str]
-
-def show_model(model, var2int):
-    int2var = [None] + [key for key, value in sorted(var2int.items(), key=lambda x: x[1])]
-    for value in model:
-        var = int2var[abs(value)]
-        if var.upper() == var: 
-            print(f"{var}={1 if value == abs(value) else 0}", end=", ")
-    print("\b\b")
-
-def get_int_cnf_from_formula(formula):
-    if len(formula.atoms()) > 7: print(f"Careful: {len(formula.atoms())} variables (recommended <7)")
-    cnf_formula = to_cnf(formula, simplify=True, force=True)
-    clauses = extract_clauses(cnf_formula)
-    str_clauses = [clause_to_str(cl) for cl in clauses]
-    var2int = get_identifiers(str_clauses)
-    int_clauses = clauses_str_to_int(str_clauses, var2int)
-    return int_clauses, var2int
-
-def get_int_cnf_from_list(formulas):
-    str_clauses = []
-    for formula in formulas:
-        if len(formula.atoms()) > 7: print(f"Careful: {len(formula.atoms())} variables (recommended <7)")
-        cnf_formula = to_cnf(formula, simplify=True, force=True)
-        clauses = extract_clauses(cnf_formula)
-        str_clauses += [clause_to_str(cl) for cl in clauses]
-    var2int = get_identifiers(str_clauses)
-    int_clauses = clauses_str_to_int(str_clauses, var2int)
-    return int_clauses, var2int
 
 def get_formula_infering(symbs, target, x, u, equations, verbose=0):
     str2var = {var.name: var for var in symbs}
@@ -272,7 +212,7 @@ def ilp_why(endo_variables, u, target, G_cnf, prefix, verbose):
                 raise Exception("No solution")
 
 ##### Main
-def run_ilp_SMK(n_attacker, instance, V_exo, prefix="../"):
+def ilp_SMK(n_attacker, instance, V_exo, prefix="../"):
     sp_vars, equations, target = get_sympy_SMK(n_attacker)
     x = " ".join(["~"*(1-value) + var.name
                   for var, value in zip(sp_vars, instance)])

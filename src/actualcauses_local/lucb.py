@@ -149,6 +149,7 @@ def lucb(evaluator, rules, beam_size, a=.05, beam_eps=.1, cause_eps=.01, non_cau
     def action_arms(arms, bs=batch_size):
         # Compute values
         E = [rules[arm] for arm in arms]
+        if not len(E): return
         values_batchs = evaluator(E, bs)
         values_batchs = values_batchs.reshape(len(E), bs, -1)
         for arm, values_batch in zip(arms, values_batchs):

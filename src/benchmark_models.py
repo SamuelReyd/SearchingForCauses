@@ -55,8 +55,8 @@ chain_vars = ["X", "J", "H", "G", "B", "T"]
 
 class ChainModel(BaseNumpyModel):
     def __init__(self):
-        phi = lambda s: np.ones(s.shape[0])
-        super().__init__(chain_vars, phi, psi=None, dtype=object)
+        psi = lambda s: np.ones(s.shape[0])
+        super().__init__(chain_vars, phi=None, psi=psi, dtype=object)
         
     def simulate(self, u):
         self["X"] = u[0]
@@ -81,8 +81,8 @@ split_vars = ["X", "G", "Y", "H", "A", "B", "T"]
 
 class SplitModel(BaseNumpyModel):
     def __init__(self):
-        phi = lambda s: np.ones(s.shape[0])
-        super().__init__(split_vars, phi, psi=None, dtype=object)
+        psi = lambda s: np.ones(s.shape[0])
+        super().__init__(split_vars, phi=None, psi=psi, dtype=object)
         
     def simulate(self, u):
         self["X"] = u[0]
@@ -131,7 +131,7 @@ def get_SMK_U(n):
 
 class SMKModel(BaseNumpyModel):
     def __init__(self, n, phi=None, psi=None, dtype=None):
-        super().__init__(get_SMK_V(n), phi, psi, dtype)
+        super().__init__(get_SMK_V(n), phi=phi, psi=psi, dtype=dtype)
         self.n = n
 
     def simulate(self, u):
@@ -187,14 +187,14 @@ def get_SMK_SCM(n:int, u:list, t: float=0, heuristic=None):
         
     return SCM(V=V,U=get_SMK_U(n),D=(0,1),
                u=u,dag=get_SMK_DAG(n), 
-               model=SMKModel(n, psi=psi))
+               model=SMKModel(n, psi=psi, phi=None))
 
 """Non-boolean SMK"""
 mSMK_variables = smk_base_vars_users + ["SMK"]
 
 class mSMKModel(SMKModel):
     def __init__(self, n, phi=None, psi=None):
-        super().__init__(n, phi, psi, int)
+        super().__init__(n, phi=phi, psi=psi, dtype=int)
     
     def simulate(self, u):
         for i in range(1,self.n+1):
@@ -275,15 +275,15 @@ def get_noisy_suzzy_SCM(u, t, lucb_params):
 
 class AvgSMKModel(AverageNumpyModel, SMKModel):
     def __init__(self, n, t, N, phi=None, psi=None):
-        SMKModel.__init__(self, n, phi, psi)
+        SMKModel.__init__(self, n, phi=phi, psi=psi)
         V = get_SMK_V(n)
         AverageNumpyModel.__init__(self, V, t, N, phi, psi)
 
 class LUCBSMKModel(LUCBNumpyModel, SMKModel):
     def __init__(self, n, t, lucb_params, phi=None, psi=None):
-        SMKModel.__init__(self, n, phi, psi)
+        SMKModel.__init__(self, n, phi=phi, psi=psi)
         V = get_SMK_V(n)
-        LUCBNumpyModel.__init__(self, V, t, lucb_params, phi, psi)
+        LUCBNumpyModel.__init__(self, V, t, lucb_params, phi=phi, psi=psi)
 
 def get_avg_nSMK_SCM(n, u, N, nl):
     V = get_SMK_V(n)
