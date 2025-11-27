@@ -6,6 +6,7 @@ from collections import defaultdict
 def render_step(verbose, causes, non_causes):
     if len(non_causes):
         if verbose == 2:
+            non_causes = sorted(non_causes, key=sort_key)
             print("Number of causes found:", len(causes))
             print("Number of non-causes remaining:", len(non_causes))
             print("Best non-cause:")

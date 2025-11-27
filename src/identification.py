@@ -4,23 +4,22 @@ from tqdm import tqdm
 from itertools import product
 from collections import defaultdict
 
-from binary_models import *
 from benchmark_models import SMKModel, get_SMK_SCM, get_SMK_V, get_mSMK_SCM, get_bbSMK_SCM, get_avg_nSMK_SCM, get_lucb_nSMK_SCM
 # from actualcauses import beam_search, iterative_identification
 from actualcauses_local.base_algorithm import beam_search
 from actualcauses_local.iterative_subinstance_algorithm import iterative_identification
 
-from ILP_why import run_ilp_SMK
+from ILP_why import ilp_SMK
 from general import *
 
 
 heuristics_refs = {
-    "Sum-pos": lambda s, v: sum(s) - 1,
-    "Sum-dif": lambda s, v: sum([s_cf != s_act for s_cf, s_act in zip(s, v)]),
-    "Sum-neg": lambda s, v: len(s) - sum(s) + 1,
-    "Occam": lambda s, v: len(s) - sum([s_cf != s_act for s_cf, s_act in zip(s, v)]),
-    "Rand": lambda s, v: int(np.random.randint(len(s))),
-    "Const": lambda s, v: len(s)//2,
+    "Sum-pos": lambda s, v: np.sum(s[:, :-1], axis=1),
+    "Sum-eq": lambda s, v: np.sum(s[:, :-1] == v[:-1], axis=1),
+    "Sum-neg": lambda s, v: np.sum(1 - s[:, :-1], axis=1) - 1,
+    "Occam": lambda s, v: np.sum(s[:, :-1] != v[:-1], axis=1),
+    "Rand": lambda s, v: np.random.randint(s.shape[1], size=s.shape[0]),
+    "Const": lambda s, v: np.full(s.shape[0], 42),
     }
 
 
@@ -68,7 +67,7 @@ def run_one_SMK(contexts, exh, model, algo, bs, n, heuristic, lucb_label,
         early_stop = (exh == Exhaustivness.SMALLEST)
         u = u.tolist()
         # Adapt on the version of the SCM
-        if heuristic is not None: scm = get_SMK_SCM(n, u, heuristics_refs[heuristic])
+        if heuristic is not None: scm = get_SMK_SCM(n, u, heuristic=heuristics_refs[heuristic])
         elif model == Models.BASE: scm = get_SMK_SCM(n, u)
         elif model == Models.NON_BOOLEAN: scm = get_mSMK_SCM(n, u)
         elif model == Models.BLACK_BOX: scm = get_bbSMK_SCM(n, u)
@@ -97,27 +96,20 @@ def run_one_SMK(contexts, exh, model, algo, bs, n, heuristic, lucb_label,
 
 
 # === ILP ===
-def serialize_symbols(C, variables):
-    var_map = {val: i for i, val in enumerate(variables)}
-    return [var_map[s.name] for s in C]
 
-def serialize_symbols_values(C, W, instance, variables):
+def serialize_rule_ILP(C, W, instance, variables):
     var_map = {val: i for i, val in enumerate(variables)}
-    rules = []
-    for s in C:
-        var_id = var_map[s.name]
-        rules.append((var_id,1-int(instance[var_id])))
-    for s in W:
-        var_id = var_map[s.name]
-        rules.append((var_id,int(instance[var_id])))
+    rules = [(v.name,1-int(instance[var_map[v.name]])) for v in C]
+    rules += [(v.name,int(instance[var_map[v.name]])) for v in W]
     return rules
 
-def run_ILP_SMK(n_attackers, prefix=""):
+def run_ILP_SMK(n_attackers, folder=""):
     model = Models.BASE
     exh = Exhaustivness.SMALLEST
     results = []
+    prefix = "../" * folder.startswith("../")
     for n in n_attackers:
-        contexts = np.load(prefix+f"results/contexts/n_attacker={n}.npy")
+        contexts = np.load(folder+f"contexts/n_attacker={n}.npy")
         variables = get_SMK_V(n)[:-1]
         data = {
                 "n_attacker": int(n),
@@ -130,12 +122,12 @@ def run_ILP_SMK(n_attackers, prefix=""):
         for u in tqdm(contexts):
             u = [int(elt) for elt in u]
             s = SMKModel(n)(u, {})
-            (C, W), t = time_fn(run_ilp_SMK, n, s, u, prefix=prefix)
+            (C, W), t = time_fn(ilp_SMK, n, s, u, prefix=prefix)
             data["results"].append({
-                    "rules": [serialize_symbols_values(C, W, s, variables)],
-                    "causes": [serialize_symbols(C, variables)],
+                    "rules": [serialize_rule_ILP(C, W, s, variables)],
+                    "causes": [[v.name for v in C]],
                     "context": u,
                     "time": t,
                 })
         results.append(data)
-    save_json(prefix+f"results/{model.value}-{exh.value}/ILP.json", results)
+    save_json(folder+f"{model.value}-{exh.value}/ILP.json", results)

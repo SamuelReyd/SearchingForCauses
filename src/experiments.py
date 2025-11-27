@@ -7,12 +7,8 @@ from evaluation import evaluate_SMK, evaluate_ILP
 # === Hyper parameters ===
 # == General ==
 N = 20
-n_attackers = (2,5,10)
-n_attackers_smallest = [2,3,4,5,6,7]
-full_attackers = list(set(n_attackers) | set(n_attackers_smallest))
-beam_sizes = [ 1, 50, 100, 150, 200, 250, 300]
-# beam_sizes = [ 1, 25, 50, 75, 100, 125, 150]
-# beam_sizes = [ 5, 10, 15, 20, 25, 30, 35, 40, 45, 50]
+n_attackers = np.arange(2, 15,2).tolist()
+ref_attackers = (2,5,10)
 beam_sizes = [2,4,8,16,32,64,128,256]
 
 # beam_sizes_smallest = [  1,  11,  22,  33,  44,  55,  66,  77,  88, 100]
@@ -40,27 +36,28 @@ exps = (
     # Exact results
     (Exhaustivness.EXACT, Models.BASE, AlgoTypes.STRUCTURED, [-1], n_attackers, [None], None, -1),
     # Smallest
-    (Exhaustivness.SMALLEST, Models.BASE, AlgoTypes.BASE, beam_sizes, n_attackers_smallest, [None], None, -1),
-    (Exhaustivness.SMALLEST, Models.BASE, AlgoTypes.STRUCTURED, beam_sizes, n_attackers_smallest, [None], None, -1),
-    # Full deterministic
+    (Exhaustivness.SMALLEST, Models.BASE, AlgoTypes.BASE, beam_sizes, n_attackers, [None], None, -1),
+    (Exhaustivness.SMALLEST, Models.BASE, AlgoTypes.STRUCTURED, beam_sizes, n_attackers, [None], None, -1),
+    # Full Base
     (Exhaustivness.FULL, Models.BASE, AlgoTypes.BASE, beam_sizes, n_attackers, [None], None, 7),
     (Exhaustivness.FULL, Models.BASE, AlgoTypes.STRUCTURED, beam_sizes, n_attackers, [None], None, 7),
-    (Exhaustivness.FULL, Models.NON_BOOLEAN, AlgoTypes.BASE, beam_sizes, n_attackers, [None], None, 7),
-    (Exhaustivness.FULL, Models.NON_BOOLEAN, AlgoTypes.STRUCTURED, beam_sizes, n_attackers, [None], None, 7),
-    # (Exhaustivness.FULL, Models.BLACK_BOX, AlgoTypes.BASE, beam_sizes, n_attackers, [None], None, 7),
+    # Full Non-Boolean
+    (Exhaustivness.FULL, Models.NON_BOOLEAN, AlgoTypes.BASE, beam_sizes, ref_attackers, [None], None, 7),
+    (Exhaustivness.FULL, Models.NON_BOOLEAN, AlgoTypes.STRUCTURED, beam_sizes, ref_attackers, [None], None, 7),
     # Heuristics
-    (Exhaustivness.FULL, Models.BASE, AlgoTypes.STRUCTURED, [50], [5], heuristics_refs.keys(), None, 7),
+    (Exhaustivness.FULL, Models.BASE, AlgoTypes.BASE, [64], [2], heuristics_refs.keys(), None, 7),
+    (Exhaustivness.FULL, Models.BASE, AlgoTypes.STRUCTURED, [64], [10], heuristics_refs.keys(), None, 7),
     # Noisy
-    (Exhaustivness.FULL, Models.NOISY, AlgoTypes.STRUCTURED, beam_sizes, n_attackers, [None], "naive", 7),
-    (Exhaustivness.FULL, Models.NOISY, AlgoTypes.STRUCTURED, beam_sizes, n_attackers, [None], "lucb", 7),
-    (Exhaustivness.FULL, Models.NOISY, AlgoTypes.BASE, beam_sizes, n_attackers, [None], "naive", 7),
-    (Exhaustivness.FULL, Models.NOISY, AlgoTypes.BASE, beam_sizes, n_attackers, [None], "lucb", 7),
+    (Exhaustivness.FULL, Models.NOISY, AlgoTypes.STRUCTURED, beam_sizes, ref_attackers, [None], "naive", 7),
+    (Exhaustivness.FULL, Models.NOISY, AlgoTypes.STRUCTURED, beam_sizes, ref_attackers, [None], "lucb", 7),
+    (Exhaustivness.FULL, Models.NOISY, AlgoTypes.BASE, beam_sizes, ref_attackers, [None], "naive", 7),
+    (Exhaustivness.FULL, Models.NOISY, AlgoTypes.BASE, beam_sizes, ref_attackers, [None], "lucb", 7),
     )
     
 # Main
 if __name__ == "__main__":
     # == Contexts == 
-    make_base_contexts(N, full_attackers)
+    make_base_contexts(N, n_attackers)
     
     # == ILP ==
     # if not os.path.isfile(f"results/base-smallest/ILP.json"):

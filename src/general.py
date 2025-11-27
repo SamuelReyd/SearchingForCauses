@@ -88,9 +88,9 @@ def generate_base_contexts_SMK(n_attacker, N, seed=42):
             if s[-1] and not any([(contexts[n] == contexts[i]).all() for i in range(n-1)]): break
     return contexts
 
-def make_base_contexts(N, n_attackers, prefix=""):
-    os.makedirs(prefix+"results/contexts",exist_ok=True)
+def make_base_contexts(N, n_attackers, folder="results/"):
+    os.makedirs(folder+"contexts",exist_ok=True)
     for n_attacker in n_attackers:
-        if os.path.isfile(prefix+f"results/contexts/{n_attacker=}.npy"): continue
+        if os.path.isfile(folder+f"contexts/{n_attacker=}.npy"): continue
         contexts = generate_base_contexts_SMK(n_attacker, N, seed=42)
-        np.save(prefix+f"results/contexts/{n_attacker=}.npy", contexts)
+        np.save(folder+f"contexts/{n_attacker=}.npy", contexts)

@@ -3,7 +3,7 @@ import numpy as np
 from collections import defaultdict
 
 class SystemModel:
-    def __init__(self, psi=None, phi=None):
+    def __init__(self, phi=None, psi=None):
         self.n_calls = 0
         self.psi = psi
         self.phi = phi
@@ -17,7 +17,7 @@ class SystemModel:
 class BaseNumpyModel(SystemModel):
     sub_N = 100_000 # used to chunk large batches
     def __init__(self, V, phi=None, psi=None, dtype=None):
-        SystemModel.__init__(self, phi, psi)
+        SystemModel.__init__(self, phi=phi, psi=psi)
         if dtype is None: self.dtype = bool
         else: self.dtype = dtype
         if self.phi is None: self.phi = lambda s: s[:,-1].astype(int)
@@ -65,11 +65,13 @@ class BaseNumpyModel(SystemModel):
             self.simulate(u)
             out.append(np.array([self.phi(self.S), self.psi(self.S)]).T)
             self.n_calls += self.S.shape[0]
+        if not len(out):
+            return 
         return np.vstack(out)
 
 class NoisyNumpyModel(BaseNumpyModel):
     def __init__(self, V, t, phi=None, psi=None, dtype=None):
-        BaseNumpyModel.__init__(self, V, phi, psi, dtype)
+        BaseNumpyModel.__init__(self, V, phi=phi, psi=psi, dtype=dtype)
         self.t = t
 
     def __setitem__(self, var, F_value):
@@ -87,7 +89,7 @@ class NoisyNumpyModel(BaseNumpyModel):
 
 class AverageNumpyModel(NoisyNumpyModel):
     def __init__(self, V, t, N, phi=None, psi=None, dtype=None):
-        NoisyNumpyModel.__init__(self, V, t, phi, psi, dtype)
+        NoisyNumpyModel.__init__(self, V, t, phi=phi, psi=psi, dtype=dtype)
         self.N = N
 
     def evaluate_batch(self, u, E, N=1):
@@ -96,7 +98,7 @@ class AverageNumpyModel(NoisyNumpyModel):
 
 class LUCBNumpyModel(NoisyNumpyModel):
     def __init__(self, V, t, lucb_params, phi=None, psi=None, dtype=None):
-        NoisyNumpyModel.__init__(self, V, t, phi, psi, dtype)
+        NoisyNumpyModel.__init__(self, V, t, phi=phi, psi=psi, dtype=dtype)
         self.lucb_params = lucb_params
 
     def evaluate_batch(self, u, E, N=1):
