@@ -90,8 +90,8 @@ def run_one_SMK(contexts, exh, model, algo, bs, n, heuristic, lucb_label,
             "time": scm.identification_time,
             "seed": seed
         }
-        if lucb_label == "lucb": res["lucb_info"] = params["lucb_info"]
-        else: res["lucb_info"] = None
+        # if lucb_label == "lucb": res["lucb_info"] = params["lucb_info"]
+        # else: res["lucb_info"] = None
         data["results"].append(res)
     return data
 

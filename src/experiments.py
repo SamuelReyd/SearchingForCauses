@@ -63,10 +63,10 @@ if __name__ == "__main__":
     make_base_contexts(N, full_attackers)
     
     # == ILP ==
-    if not os.path.isfile(f"results/base-smallest/ILP.json"):
-        print("Run ILP")
-        run_ILP_SMK(n_attackers_smallest)
-        evaluate_ILP()
+    # if not os.path.isfile(f"results/base-smallest/ILP.json"):
+    #     print("Run ILP")
+    #     run_ILP_SMK(n_attackers_smallest)
+    #     evaluate_ILP()
 
     # == Experiments ==
     for exp in exps:

@@ -94,12 +94,14 @@ def evaluate_SMK(exh, model, algo, beam_sizes, n_attackers, heuristics, lucb_lab
         ref_causes = build_ref_causes_bb(data)
     else:
         if exh == Exhaustivness.SMALLEST:
+            if not os.path.isfile(folder+"base-smallest/ILP.json"): return
             ref_data = load_json(folder+"base-smallest/ILP.json")
         else: 
             ref_data = load_json(folder+"base-exact/structured.json")
         ref_causes = get_exact_causes(ref_data)
     for datum in data:
         n = datum["n_attacker"]
+        if datum["beam_size"] == -1: continue
         for res in datum["results"]:
             context_repr = int("".join(map(str,res["context"])), 2)
             ref = ref_causes[f"{context_repr}-{n}"]
