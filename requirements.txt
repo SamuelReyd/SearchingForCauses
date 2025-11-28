@@ -5,3 +5,5 @@ pandas
 sympy 
 gurobipy
 actualcauses
+ipykernel
+Jinja2

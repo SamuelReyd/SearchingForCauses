@@ -1,486 +1,406 @@
-# import numpy as np, matplotlib.pyplot as plt, json, os, pandas as pd
-# from tqdm import tqdm
-# from collections import defaultdict
-# from itertools import product
+import numpy as np, timeit, time, matplotlib.pyplot as plt, json, os, pandas as pd
+import matplotlib.ticker as ticker
+from tqdm import tqdm
+from itertools import product
+from sklearn.preprocessing import PolynomialFeatures
+from sklearn.linear_model import LinearRegression
+from sklearn.pipeline import make_pipeline
+from sklearn.metrics import r2_score
 
-# from matplotlib.lines import Line2D
+from general import *
 
-# from sklearn.preprocessing import PolynomialFeatures
-# from sklearn.linear_model import LinearRegression
-# from sklearn.pipeline import make_pipeline
-# from sklearn.metrics import r2_score
+w,h=3.1,2.1
 
-# from general import *
-# from identification import get_heuristics
+# == Retrieve values ==
+def get_values(exps, metrics, folder="results/"):
+    table = []
+    columns = ["exh", "algo", "model", "lucb_label", "heuristic", "n", "bs", "u", "seed", "time","n_calls"] + metrics
+    for exh, model, algo, _, _, heuristics, lucb_label, _ in exps:
+        file_name = get_file_name(exh, model, algo, heuristics, lucb_label)
+        try:
+            data = load_json(folder+file_name)
+            print(f"-> {file_name}")
+        except FileNotFoundError: 
+            print(f"-x {file_name}")
+            continue
+        for datum in data:
+            bs, n = datum["beam_size"], datum["n_attacker"]
+            heuristic = datum.get("heuristic")
+            for res in datum["results"]:
+                u = tuple(res["context"])
+                if "seed" in res: seed = res["seed"]
+                else: seed = None
+                n_calls = res.get("n_calls")
+                row = [
+                    exh.value, algo.value, model.value, lucb_label, heuristic, n, bs, u, seed, res["time"], n_calls
+                ]
+                for metric in metrics:
+                    if "metrics" not in res or metric not in res["metrics"]:
+                        row.append(None)
+                    else:
+                        row.append(res["metrics"][metric])
+                table.append(row)
+    return pd.DataFrame(table, columns=columns)
 
-
-# def plot_metric(metric, n_attackers, beam_sizes, 
-#                 exh: Exhaustivness, model: Models,
-#                 lucb_label=None,
-#                 prefix="", ax=None, save=False):
-#     if ax is None:
-#         ax = plt.gca()
-#         show = True
-#     else: show = False
-#     if lucb_label is None: lab = ""
-#     else: lab = "-" + lucb_label
-#     att = {value: i for i, value in enumerate(n_attackers)}
-#     bs = {value: i for i, value in enumerate(beam_sizes)}
-#     for ls, struct in zip(("--", "-"), AlgoTypes):
-#         if os.path.isfile(prefix+f"results/{model.value}-{exh.value}/{struct.value}{lab}.json"):
-#             data = load_json(prefix+f"results/{model.value}-{exh.value}/{struct.value}{lab}.json")
-#         else:
-#             continue
-#         perfs = np.zeros((len(beam_sizes), len(n_attackers)))
-#         stds = np.zeros((len(beam_sizes), len(n_attackers)))
-#         for datum in data:
-#             if datum["beam_size"] == -1: continue
-#             perfs[bs[datum["beam_size"]], att[datum["n_attacker"]]] = datum[f"{metric}-avg"]
-#             stds[bs[datum["beam_size"]], att[datum["n_attacker"]]] = datum[f"{metric}-std"]
-#         for j, n_attacker in enumerate(n_attackers):
-#             ax.plot(np.array(beam_sizes) + j, perfs[:,j], 
-#                      color=f"C{j}", marker="x", ls=ls)
-    
-#     ax.set_xlabel("Beam sizes")
-#     ax.set_ylabel(metric)
-
-# def plot_two_metrics(n_attackers, beam_sizes, metrics, title, prefix="../"):
-#     _, axes = plt.subplots(2, 5, figsize=(15,4.5), sharex=True,sharey="row")
-#     for measure, ax_line in zip(metrics,axes):
-#         line_gen = iter(ax_line)
-#         for model, ax in tqdm(list(zip((Models.BASE, Models.NON_BOOLEAN, Models.BLACK_BOX),line_gen))):
-#             plot_metric(measure, n_attackers, beam_sizes, 
-#                             Exhaustivness.FULL, model,
-#                             prefix="../", ax=ax)
-#             ax.set_ylabel("")
-#             ax.set_xlabel("")
-#             ax.grid(axis="y")
-#         for lucb_label, ax in tqdm(list(zip(('lucb','naive'),line_gen))):
-#             plot_metric(measure, n_attackers, beam_sizes, 
-#                             Exhaustivness.FULL, Models.NOISY, lucb_label=lucb_label,
-#                             prefix="../", ax=ax)
-#             ax.set_ylabel("")
-#             ax.set_xlabel("")
-#             ax.grid(axis="y")
-#     ax_gen = iter(axes[0])
-#     for ax, model in zip(axes[0,:3], (Models.BASE, Models.NON_BOOLEAN, Models.BLACK_BOX)):
-#         ax.set_title(model.value)
-#     for ax, lucb_label in zip(axes[0,3:5], ('lucb','naive')):
-#         ax.set_title(f"noisy - {lucb_label}")
-#     for ax, metric in zip(axes[:,0], metrics):
-#         ax.set_ylabel(metric)
-#     for ax in axes[1]: 
-#         # if metrics[1] == "time":
-#         #     ax.set_yscale("log")
-#         ax.set_xticks(beam_sizes)
-#         ax.set_xlabel("Beam size")
+def get_values_ILP(metrics, folder):
+    table = []
+    columns = ["exh", "algo", "model", "lucb_label", "heuristic", "n", "bs", "u", "seed", "time","n_calls"] + metrics
+    file_name = "base-smallest/ILP.json"
+    try:
+        data = load_json(folder+file_name)
+        print(f"-> {file_name}")
+    except FileNotFoundError: 
+        print(f"-x {file_name}")
+        return pd.DataFrame(table, columns=columns)
         
-#     # Plot legend n_attacker
-#     for n_attacker in n_attackers:
-#         axes[1,0].plot([],[],label=f"n={n_attacker}")
-#     axes[1,0].legend(ncols=2)
-#     # Plot legend algo type
-#     for algo, ls in zip(AlgoTypes, ("--", "-")):
-#         axes[1,2].plot([],[],label=f"{algo.value}", ls=ls, c="grey")
-#     axes[1,2].legend()
+    heuristic, lucb_label, seed, n_calls = (None,) * 4
+    for datum in data:
+        bs, n = datum["beam_size"], datum["n_attacker"]
+        seed = None
+        for res in datum["results"]:
+            u = tuple(res["context"])
+            n_calls = res.get("n_calls")
+            row = [
+                Exhaustivness.SMALLEST.value, "ILP", Models.BASE.value, 
+                lucb_label, heuristic, n, bs, u, seed, res["time"], n_calls
+            ]
+            for metric in metrics:
+                if "metrics" not in res or metric not in res["metrics"]:
+                    row.append(None)
+                else:
+                    row.append(res["metrics"][metric])
+            table.append(row)
+    return pd.DataFrame(table, columns=columns)
+
+# == Main figure ==
+def plot_metric_mean(df, models, metrics, no_share=None, folder="figures/"):
+    rows, cols = len(metrics),len(models)
+    _, axes = plt.subplots(rows, cols, figsize=(w*cols,h*rows), sharex=True)
     
-#     plt.tight_layout()
-#     plt.savefig(prefix+f"results/{title}.pdf")
-#     plt.show()
-    
-
-
-# def plot_distributions(models, n_attackers, algo, exh, metric, prefix="../", base_size=2, plot_type="violin"):
-#     _, axes = plt.subplots(len(models),len(n_attackers), 
-#                            figsize=(base_size*len(n_attackers),base_size*len(models)), 
-#                            sharex=True, sharey='row', squeeze=False)
-    
-#     for ax_line, (model, lucb_label) in tqdm(list(zip(axes, models))):
-#         for ax, n_attacker in zip(ax_line, n_attackers):
-#             plot_distribution(metric, n_attacker, algo, exh, 
-#                               model, lucb_label, ax, prefix, plot_type)
-#     for i, n_attacker in enumerate(n_attackers):
-#         axes[0,i].set_title(f"{n_attacker=}")
-#         axes[-1,i].set_xlabel("Beam sizes")
-#     for j, (model, lucb_label) in enumerate(models):
-#         lab = f" - {lucb_label}" if lucb_label else ""
-#         axes[j,0].set_ylabel(f"{model.value}{lab}\n\n{metric}")
-#     plt.tight_layout()
-#     plt.savefig(prefix+f"results/distributions-{algo.value}-{metric}.pdf")
-#     plt.show()
-
-# def plot_distribution(metric, n_attacker, algo, exh, model, lucb_label, ax=None, prefix="../", plot_type="violin"):
-#     if ax is None:
-#         ax = plt.gca()
-
-#     lab = f"-{lucb_label}" if lucb_label else ""
-#     data = load_json(prefix+f"results/{model.value}-{exh.value}/{algo.value}{lab}.json")
-#     values = {}
-#     for datum in data:
-#         if datum["beam_size"] == -1 or datum["n_attacker"] != n_attacker: continue
-#         values[datum["beam_size"]] = [res[metric] for res in datum["results"]]
-    
-#     X_val = sorted(values.keys())
-#     Y = [values[x] for x in X_val]
-#     X = np.arange(len(X_val))
-#     if plot_type == "violin":
-#         ax.violinplot(Y, positions=X, showextrema=False, showmeans=True, widths=.7)
-#     elif plot_type == "box":
-#         ax.boxplot(Y, positions=X)
-#     # ax.plot(X, np.mean(Y, axis=1), "x", c="black")
-#     ax.set_xticks(X, X_val)
-
-# def gather_data_smallest(prefix, algos, metrics, n_attackers, beam_sizes):
-#     all_perfs = {}
-#     all_stds = {}
-#     model = Models.BASE
-#     exh = Exhaustivness.SMALLEST
-#     for metric in tqdm(metrics):
-#         for algo_val in algos:
-#             data = load_json(prefix+f"results/{model.value}-{exh.value}/{algo_val}.json")
-#             perfs = np.zeros((len(beam_sizes), len(n_attackers)))
-#             stds = np.zeros((len(beam_sizes), len(n_attackers)))
-#             for datum in data:
-#                 if datum["beam_size"] == -1: continue
-#                 if datum["beam_size"] is None:
-#                     perfs[:, n_attackers.index(datum["n_attacker"])] = datum[f"{metric}-avg"]
-#                     stds[:, n_attackers.index(datum["n_attacker"])] = datum[f"{metric}-std"]
-#                 else:
-#                     perfs[beam_sizes.index(datum["beam_size"]), n_attackers.index(datum["n_attacker"])] = datum[f"{metric}-avg"]
-#                     stds[beam_sizes.index(datum["beam_size"]), n_attackers.index(datum["n_attacker"])] = datum[f"{metric}-std"]
-#                 all_perfs[f"{metric}-{algo_val}"] = perfs
-#                 all_stds[f"{metric}-{algo_val}"] = stds
-#     return all_perfs, all_stds
-
-# def get_smallest_legend(ax):
-#     lines = []
-#     lines.append(Line2D([], [], label="Base algo", color="grey", ls="-", marker="x"))
-#     lines.append(Line2D([], [], label="Structured", color="grey", ls="--", marker="+"))
-#     lines.append(Line2D([], [], label="ILP", color="grey", ls="-.", marker="D"))
-#     return ax.legend(handles=lines, loc="lower left")
-
-# def plot_smallest_data(axes, metrics, Z, X, all_perfs, markers, lines, algos, xlabel, klabel):
-#     Z_ids = np.linspace(0,len(Z)-1,3,dtype=int)
-#     for ax, metric in zip(axes, metrics):
-#         for i, Z_i in enumerate(Z_ids):
-#             c_pad = 0 if xlabel == "beam sizes" else 3
-#             c = f"C{i+c_pad}"
-#             # Make the legends
-#             ax.plot([], label=f"{klabel}={Z[Z_i]}", color=c)
+    for row in range(rows):
+        if no_share is None or row in no_share:
+            continue
+        ref = axes[row, 0]
+        for c in range(1, cols):
+            axes[row, c].sharey(ref)
+            axes[row, c].tick_params(labelleft=False)
             
-#             for marker, ls, algo_val in zip(markers, lines, algos):
-#                 # Do the plots
-#                 perfs = all_perfs[f"{metric}-{algo_val}"]
-#                 if perfs[Z_i].size != len(X): perfs = perfs.T
-#                 if algo_val == "ILP": c = "grey"
-#                 ax.plot(X, perfs[Z_i], color=c, marker=marker, ls=ls)
-                       
-            
-#         ax.set_xticks(X)
+    df = df[(df.exh=="full") & df.heuristic.isna()]
+    for j, (model, lucb_label) in enumerate(models):
+        for i, metric in enumerate(metrics):
+            for algo in set(df.algo):
+                for c, n in enumerate(sorted(set(df.n))):
+                    index = (df.algo == algo) & (df.model==model) & (df.n == n) & df.heuristic.isna()
+                    if lucb_label:
+                        index &= (df.lucb_label == lucb_label)
+                    df_ = df[index].groupby(["bs"], as_index=True)[metric].mean()
+                    std = df[index].groupby(["bs"], as_index=True)[metric].std()/2
+                    x = np.arange(df_.index.size)
+                    if algo == AlgoTypes.STRUCTURED.value: ls = "--"
+                    else: ls = "-"
+                    axes[i,j].errorbar(x, df_.array, yerr=std, marker="x",ls=ls, c=f"C{c}")
+                    axes[i,j].set_xticks(x,df_.index)
+        axes[0,j].grid(axis="y")
+        axes[1,j].grid(axis="y")
+        axes[1,j].set_xlabel("Beam size")
+        axes[0,j].set_title(model + "-"*bool(lucb_label)+lucb_label)
+        formatter = ticker.ScalarFormatter(useMathText=True)
+        formatter.set_powerlimits((0, 0))  # always use 10^n form
+        axes[1,j].yaxis.set_major_formatter(formatter)
+
+    for c, n in enumerate(sorted(set(df.n))):
+        axes[1,0].plot([], c=f"C{c}", label=f"{n=}")
+    for algo in set(df.algo):
+        if algo == AlgoTypes.STRUCTURED.value: ls = "--"
+        else: ls = "-"
+        axes[1,0].plot([], c="grey", ls=ls, label=algo)
+    axes[1,0].legend()
+    
+    for ax, metric in zip(axes.T[0], metrics): ax.set_ylabel(metric)
+    plt.tight_layout()
+    plt.savefig(folder+"-".join(metrics)+"-mean.pdf")
+    plt.show()
+
+# == Spaghetti plot ==
+def plot_spaguetti(df, models, algo, metric):
+    df = df[(df.exh=="full") & df.heuristic.isna()]
+    algos = sorted(set(df.algo))
+    ns = sorted(set(df.n))
+    _, axes = plt.subplots(len(ns), len(models), figsize=(w*len(models),h*len(ns)), 
+                           sharex=True, sharey="row")
+    for j, (model, lucb_label) in tqdm(list(enumerate(models))):
+        for i, n in enumerate(ns):
+            index = (df.algo == algo.value) & (df.model==model) & (df.n == n) & df.heuristic.isna()
+            if lucb_label:
+                index &= (df.lucb_label == lucb_label)
+            x = np.arange(len(set(df[index].bs)))
+            for c, u in enumerate(sorted(set(df[df.n==n].u))):
+                df_ = df[index & (df.u == u)].groupby(["bs"], as_index=True)[metric].mean() + .001*c
+                # df_.plot(style="x-", ax=axes[i,j], c=f"C{c}", alpha=.5)
+                axes[i,j].plot(x, df_.array, marker="x", ls="-", c=f"C{c}", alpha=.5)
+            df_ = df[index].groupby(["bs"], as_index=True)[metric].mean()
+            axes[i,j].plot(x, df_.array, marker="x", ls="-", c=f"black")
+            # df_.plot(style="x-", ax=axes[i,j], c=f"black")
+            axes[i,j].grid(axis="y")
+            axes[i,j].set_xticks(x, df_.index)
+        axes[0,j].set_title(model + "-"*bool(lucb_label)+lucb_label)
+    plt.tight_layout()
+    plt.show()
+
+# == Tradeff figure ==
+def plot_tradeoff(df, exh, algo, n, quality_metric, ax=None):
+    if ax is None: ax = plt.gca()
+    index = (
+        (df.exh==exh) & (df.heuristic.isna()) & (df.algo == algo) & (df.model == "base") & (df.n == n)
+    )
+    # print(df[index])
+    group = df[index].groupby(["bs"], dropna=False)
+    stds = group[[quality_metric,"time"]].std()
+    df_ = group.mean([quality_metric, "time"])
+    
+    t_std = stds.time / 2
+    q_std = stds[quality_metric] / 2
+    # print(df_)
+    bs = df_.index.array
+    t = df_.time.array
+    q = df_[quality_metric].array
+    ax.errorbar(t, q, xerr=t_std, yerr=q_std, ls='--',capsize=2, ecolor="grey")
+    for xi, yi, label in zip(t, q, bs):
+        ax.text(xi, yi, label, fontsize=9, ha='right', va='bottom')
+    ax.set_ylim(min(q)-12, max(q) + 10)
+    ax.set_xlabel("time (s)")
+    ax.set_xscale("log")
+
+def plot_full_tradeoffs(df, folder="figures/"):
+    _, axes = plt.subplots(1,3, figsize=(3*w, 1.5*h))
+    comps = (
+        ("full", "base_algo", 2), 
+        ("full", "structured", 10),
+        ("smallest", "base_algo", 7)
+    )
+    for i, (exh, algo, n) in enumerate(comps):
+        metric = "dice" if exh == "full" else "accuracy"
+        plot_tradeoff(df, exh, algo, n, metric, axes[i])
+        lab = "ISI" if algo == "structured" else algo
+        axes[i].set_title(f"{exh} - {lab} - n={n}")
+    plt.tight_layout()
+    plt.savefig(folder + "tradeoffs.pdf")
+    plt.show()
+
+# == Heuristic figure ==
+def plot_heuristic(df, folder="figures/"):
+    _, axes = plt.subplots(1,2, figsize=(2*w, 1.3*h))
+    for algo, ax in zip(("base_algo", "structured"), axes):
+        df_ = df[~df.heuristic.isna() & (df.algo == algo)]
+        xticks = df_.heuristic.unique()
+        for i, psi in enumerate(xticks):
+            values = df_[df_.heuristic == psi].dice.array
+            x = np.linspace(i-.1,i+.1, len(values))
+            x = np.full(len(values), i)
+            ax.scatter(x, values, alpha=.2, color="grey")
+            ax.scatter([i], [values.mean()], color="black", marker="+")
+            ax.text(i, values.mean(), f"{values.mean():.0f}%", va="top")
+        ax.set_xticks(np.arange(len(xticks)), xticks, rotation=45)
+    axes[0].set_title(f"Beam Search - n=2 - b=64")
+    axes[1].set_title(f"ISI - n=10 - b=8")
+    axes[0].set_ylabel("Dice")
+    plt.tight_layout()
+    plt.savefig(folder+"heuristic_plot.pdf")
+    plt.show()
+
+# == Smallest identification figure ==
+def show_smallest_comparison(df, beam_sizes, ax=None):
+    if ax is None: ax = plt.gca()
+    comps = [("structured", bs) for bs in beam_sizes]
+    comps += [("base_algo", bs) for bs in beam_sizes]
+    comps += [("ILP", None)]
+    
+    for c, (algo, bs) in enumerate(comps):
+        index = (df.exh == "smallest") & (df.algo == algo)
+        label = "ISI" if algo == "structured" else algo
+        if bs is not None: 
+            index &= (df.bs == bs)
+            label += f" - b={bs}"
+        ax.plot([],label=label, c=f"C{c}", marker="x")
+        df_ = df[index].groupby(["n"], as_index=False).mean(["time", "accuracy"])
+        ns = df_.index.array
+        for i in range(len(ns)-1):
+            ni = ns[i]
+            nj = ns[i+1]
+            xi = len(get_SMK_V(ni))
+            xj = len(get_SMK_V(nj))
+            yi = df_.loc[i, "time"]
+            yj = df_.loc[i+1, "time"]
+            ai = abs(df_.loc[i, "accuracy"] - 100) < .1
+            aj = abs(df_.loc[i+1, "accuracy"] - 100) < .1
+            ls = "-" if (ai and aj) else '--'
+            ax.plot([xi, xj], [yi, yj], c=f"C{c}", ls=ls, marker="x")
+    ax.set_yscale("log")
+    ax.set_ylabel("time (s)")
+    ax.set_xlabel("|V|")
+    ax.legend(loc="center right")
+
+def show_smallest_perf(df, beam_sizes, ax=None):
+    if ax is None: ax = plt.gca()
+    for i,bs in enumerate((2,4,8,16,32,64)):
+        index = (df.exh == "smallest") & (df.algo == "base_algo") & (df.bs == bs)
+        df_ = df[index].groupby(["n"])["accuracy"].mean()
+        x = np.array([len(get_SMK_V(n)) for n in df_.index])
+        ax.plot(x+.8*i, df_.array, label=f"b={bs}")
+    ax.legend()
+    ax.set_xlabel("|V|")
+    ax.set_ylabel("Accuracy")
+
+def plot_smallest(df, folder="figures/"):
+    _, axes = plt.subplots(1,2, figsize=(3.5*w, 2*h))
+    show_smallest_comparison(df, (4,32,256), ax=axes[0])
+    show_smallest_perf(df, (2,4,6,16,32,64), ax=axes[1])
+    axes[0].set_title("Time against system size for several algoritms")
+    axes[1].set_title("Accuracy against system size for the base algorithm")
+    plt.tight_layout()
+    plt.savefig(folder+"smallest_fig.pdf")
+    plt.show()
+
+# == Regression figures ==
+def regression(x, y, degree):
+    model = make_pipeline(PolynomialFeatures(degree=degree), LinearRegression())
+    model.fit(x.reshape(-1, 1), y)
+    y_pred = model.predict(x.reshape(-1, 1))
+    r2 = r2_score(y, y_pred)
+    coefficients = model.named_steps['linearregression'].coef_
+    return coefficients, r2, y_pred
+
+candidates = {
+    "log n": lambda n: np.log(n),
+    "n": lambda n: n,
+    "n²": lambda n: n**2,
+    "n³": lambda n: n**3,
+    "√n": lambda n: np.sqrt(n),
+}
+
+def fit_model(x, y, g):
+    X = g(x).reshape(-1, 1)
+    model = LinearRegression().fit(X, y)
+    y_pred = model.predict(X)
+    r2 = model.score(X, y)
+    return r2, y_pred, (model.coef_[0], model.intercept_)
+
+def find_model(x,y, verbose=False):
+    results = {}
+    
+    for name, fn in candidates.items():
+        results[name] = fit_model(x, y, fn)
+    sorted_results = sorted(results.items(), key=lambda kv: -kv[1][0])
+    
+    if verbose:
+        print("\nEmpirical Complexity Fit:")
+        print("--------------------------")
+        for name, (r2, a, b) in sorted_results:
+            print(f"{name:10s}  R² = {r2:.6f}   a = {a:.6e}   b = {b:.6e}")
+    return sorted_results[0]
+
+def plot_all_regressions(df, folder="figures/"):
+    _, axes = plt.subplots(2,3, figsize=(3*w*2,2*h*2))
+
+    
+    axes[0,0].set_title("Smallest - Beam Search")
+    axes[0,1].set_title("Full - Beam Search")
+    axes[0,2].set_title("Full - ISI")
+
+    ns = (2,4,6,8,10,12,14)
+    plot_reg_x_per_z(df, ns, "n", "bs", "smallest", "base_algo", axes[0,0])
+    plot_reg_x_per_z(df, ns, "n", "bs", "full", "base_algo", axes[0,1])
+    plot_reg_x_per_z(df, ns, "n", "bs", "full", "structured", axes[0,2])
+
+    bss = (2,4,8,16,32,64,128,256)
+    plot_reg_x_per_z(df, bss, "bs", "n", "smallest", "base_algo", axes[1,0])
+    plot_reg_x_per_z(df, bss, "bs", "n", "full", "base_algo", axes[1,1])
+    plot_reg_x_per_z(df, bss, "bs", "n", "full", "structured", axes[1,2])
+
+    for ax in axes.flatten():
+        ax.legend(ncols=2)
+        formatter = ticker.ScalarFormatter(useMathText=True)
+        formatter.set_powerlimits((0, 0))  
+        ax.yaxis.set_major_formatter(formatter)
+        ax.set_ylabel("n_calls")
+    for ax in axes[0,:]: ax.set_xlabel("beam size")
+    for ax in axes[1,:]: ax.set_xlabel("|V|")
+    plt.tight_layout()
+    plt.savefig(folder+"regressions.pdf")
+    plt.show()
+
+def plot_reg_x_per_z(df, zs, z_label, x_label, exh, algo, ax=None, y_label="n_calls"):
+    if ax is None: ax = plt.gca()
+    for i, z in enumerate(zs):
+        index = (
+            (df.exh==exh) & (df.algo==algo) & (df[z_label]==z) & df.heuristic.isna()
+        )
         
-#         if metric == 'time':
-#             ax.set_yscale("log")
-#     axes[0].legend(loc='upper left')
-#     axes[-1].set_xlabel(xlabel)
+        df_ = df[index].groupby([x_label]).mean([y_label])[[y_label]]
+        if not df_.index.size: continue
+        X, Y = df_.index.array, df_[y_label].array
+        fit, (r2, Y_pred, coefs) = find_model(X,Y)
+        ax.plot(X,Y, "x", c=f"C{i}", ls='-', label=f"{z_label}={int(z)}: {fit} {r2:.0%}")
+        ax.plot(X,Y_pred, c=f"C{i}",ls='--')
 
-# def plot_smallest(n_attackers, beam_sizes):
-#     exh = Exhaustivness.SMALLEST
-#     model = Models.BASE
-#     metrics = ("accuracy","time")
-#     prefix = "../"
+# == Tables comparing the algorithm improvements ==
+def show_call_gain_ISI(df, latex=True):
+    index = ((df.model=="base")|(df.model=="non-boolean"))&(df.heuristic.isna())&(df.exh=="full")
+    df_ = df[index].groupby(["algo", "n", "bs", "model"], as_index=False).n_calls.mean()
+    df_ = df_.set_index(["n", "bs", "model"]).pivot(columns="algo")
+    df_ = (df_[('n_calls',  'base_algo')] - df_[('n_calls',  'structured')]) / df_[('n_calls',  'base_algo')] *100
+    df_ = df_.to_frame().reset_index().pivot(columns="model", index=["n", "bs"])
+    if latex: print(df_.to_latex(float_format="%.0f"))
+    else: return df_
+
+def show_call_gain_LUCB(df, latex=True):
+    index = (df.model=="noisy")&(df.heuristic.isna())&(df.exh=="full")
+    df_ = df[index].groupby(["algo", "n", "bs", "lucb_label"], as_index=False).n_calls.mean()
+    df_ = df_.set_index(["n", "bs", "algo"]).pivot(columns="lucb_label")
+    df_ = (df_[('n_calls',  'naive')] - df_[('n_calls',  'lucb')]) / df_[('n_calls',  'naive')] * 100
+    df_ = df_.to_frame().reset_index().pivot(columns="algo", index=["n", "bs"])
+    if latex: print(df_.to_latex(float_format="%.0f"))
+    else: return df_
+
+def show_dice_gain_ISI(df, latex=True):
+    index = ((df.model=="base")|(df.model=="non-boolean"))&(df.heuristic.isna())&(df.exh=="full")
+    df_ = df[index].groupby(["algo", "n", "bs", "model"], as_index=False).dice.mean()
+    df_ = df_.set_index(["n", "bs", "model"]).pivot(columns="algo")
+    df_ = df_[('dice',  'structured')] - df_[('dice',  'base_algo')]
+    df_ = df_.to_frame().reset_index().pivot(columns="model", index=["n", "bs"])
+    if latex: print(df_.to_latex(float_format="%.0f"))
+    else: return df_
+
+def show_dice_gain_LUCB(df, latex=True):
+    index = ((df.model=="noisy"))
+    df_ = df[index].groupby(["algo","n","bs","lucb_label"]).dice.mean()
+    df_ = df_.reset_index().pivot(columns="lucb_label", index=["algo","n","bs"])
+    df_ = (df_[("dice", "lucb")] - df_[("dice", "naive")]).reset_index().pivot(columns="algo", index=["n", "bs"])
+    if latex: print(df_.to_latex(float_format="%.1f"))
+    else: return df_
+
+# == Retrieve and show some relevant number to put in article ==
+def locate_text_numbers(df):
+    index = ((df.model=="base")&(df.n==2)&(df.heuristic.isna())&(df.algo=="base_algo")&(df.exh=="full"))
+    df_ = df[index].groupby(["bs"]).dice.mean()
+    print(f"base algo, base model, full, n=2:         bs:8->16:  +{df_.loc[16] - df_.loc[8]:.1f} dice points")
     
-#     _, axes = plt.subplots(2,2,figsize=(7,4), sharey='row', sharex='col')
-#     legend_ax = axes[0,1]
-#     legend = get_smallest_legend(legend_ax)
+    index = ((df.model=="base")&(df.n==10)&(df.heuristic.isna())&(df.algo=="structured")&(df.exh=="full"))
+    df_ = df[index].groupby(["bs"]).dice.mean()
+    print(f"ISI algo, base model, full, n=10:         bs:8->16:  +{df_.loc[16] - df_.loc[8]:.1f} dice points")
     
-#     markers = ("x","+","D")
-#     lines = ("-", "--","-.")
-#     algos = (AlgoTypes.BASE.value,AlgoTypes.STRUCTURED.value,"ILP")
-
-#     all_perfs, all_stds = gather_data_smallest(prefix, algos, metrics, n_attackers, beam_sizes)
-
-#     plot_smallest_data(axes[:,0], metrics, n_attackers, beam_sizes, all_perfs, markers, lines, algos, "beam sizes","n")
-#     plot_smallest_data(axes[:,1], metrics, beam_sizes, n_attackers, all_perfs, markers, lines, algos, "# attackers", "b")
-
-#     legend_ax.add_artist(legend)
-#     for metric, ax_line in zip(metrics,axes):
-#         ax_line[0].set_ylabel(metric)
-#     plt.tight_layout()
-#     plt.savefig("../results/main-smallest.pdf")
-#     plt.show()
-
-# def plot_heuristics(prefix=""):
-#     measures = load_json(prefix+f"results/base-full/heuristics.json")
-#     X = list(get_heuristics(None).keys())
-#     X_pos = np.arange(len(X))
-#     Y = [measures[x] for x in X]
-#     Y_mean = [np.mean(measures[x]) for x in X]
-#     # Y_min = [np.std(measures[x]) for x in X]
-#     # Y_max = [np.std(measures[x]) for x in X]
-#     X = [x.replace("heuristic_", "") for x in X]
-#     plt.boxplot(Y, positions=X_pos)
-#     plt.plot(X_pos, Y_mean, "x")
-#     plt.ylabel("F1 scores")
-#     plt.xticks(X_pos, X, rotation=45)
-#     plt.savefig(prefix+"results/heuristics.pdf", bbox_inches='tight')
-#     plt.show()
-
-# def regression(x, y, degree):
-#     model = make_pipeline(PolynomialFeatures(degree=degree), LinearRegression())
-#     model.fit(x.reshape(-1, 1), y)
-#     y_pred = model.predict(x.reshape(-1, 1))
-#     r2 = r2_score(y, y_pred)
-#     coefficients = model.named_steps['linearregression'].coef_
-#     return coefficients, r2, y_pred
-
-# def plot_regression(X, Y, Y_err, ax, i, z_label, degree):
-#     coefficients, r2, Y_pred = regression(X, Y, degree)
-#     if Y_err is None:
-#         ax.plot(X,Y, "x", c="black")
-#     else:
-#         ax.errorbar(X,Y, Y_err, c="black", ls="", marker="x")
-#     ax.plot(X,Y_pred, c="C0")
-#     ax.set_xticks(np.arange(X.size))
-#     ax.set_title(f"{z_label}\n$R^2={r2:.3f}$ - coef={coefficients[-1]:.2f}")
-
-# def plot_regressions(all_perfs, all_stds, algo_val, X, Z, z_lab, x_lab, transpose, do_ILP, 
-#                      n_col, n_row, degree, prefix="../", exh=Exhaustivness.SMALLEST):
-#     perf = all_perfs[f"time-{algo_val}"]
-#     stds = all_stds[f"time-{algo_val}"]
-#     acc = all_perfs[f"accuracy-{algo_val}"]
-#     if transpose:
-#         perf = perf.T
-#         stds = stds.T
-#         acc = acc.T
-#     _, axes = plt.subplots(n_row,n_col,figsize=(n_col*3,n_row*3), sharex=True)
-#     x = np.arange(len(X))
-
-#     ax_gen = iter(axes.flatten())
-#     for i, ax in zip(range(perf.shape[0]),ax_gen):
-#         y = perf[i]
-#         y_err = stds[i]
-#         plot_regression(x, y, y_err, ax, i, f"{z_lab}: {Z[i]}", degree)
-#         ax2 = ax.twinx()
-#         ax2.plot(x, acc[i], "--", c="grey")
-#         ax2.set_ylim(0,1.1)
-#         ax2.set_zorder(1)
-#         ax2.set_ylabel("Accuracy")
-#         ax.set_ylabel("Time (s)")
-        
-#     for i in range(n_col):
-#         axes[1,i].set_xticks(x, X)
-#         axes[1,i].set_xlabel(x_lab)
-
-#     if do_ILP:
-#         plot_regression(x, all_perfs[f"time-ILP"][0], None, next(ax_gen), perf.shape[0], "ILP", degree)
-#     ax = next(ax_gen)
-#     ax.set_axis_off()
-#     ax.plot([], [], "x", color="black", label="Runtime")
-#     ax.plot([], [], "-", color="C0", label="Regression")
-#     ax.plot([], [], "--", color="grey", label="Accuracy")
-#     ax.legend()
-#     plt.tight_layout()
-#     plt.savefig(prefix+f"results/smallest-time-vs-{x_lab}.pdf")
-#     plt.show()
-
-# def plot_regression_smallest(n_attackers, beam_sizes, metrics, prefix="../"):
-#     algos = (AlgoTypes.BASE.value,AlgoTypes.STRUCTURED.value,"ILP")
+    index = ((df.model=="base")&(df.n==5)&(df.heuristic.isna())&(df.bs==4)&(df.exh=="full"))
+    df_ = df[index].groupby(["algo"]).dice.mean()
+    print(f"base model, full, n=10, bs=4:             base->ISI: +{df_.loc['structured'] - df_.loc['base_algo']:.1f} dice points")
     
-#     all_perfs, all_stds = gather_data_smallest(prefix, algos, metrics, n_attackers, beam_sizes)
-
-#     plot_regressions(all_perfs, all_stds, "base_algo", 
-#                  n_attackers, beam_sizes, "beam size", "n attackers",
-#                  transpose=False, do_ILP=True, n_col=6, n_row=2, 
-#                  degree=2, prefix=prefix, exh=Exhaustivness.SMALLEST)
-
-#     plot_regressions(all_perfs, all_stds, "base_algo", 
-#                  beam_sizes, n_attackers, "n attackers", "beam size", 
-#                  transpose=True, do_ILP=False, n_col=5, n_row=2, 
-#                  degree=1, prefix=prefix, exh=Exhaustivness.SMALLEST)
-
-
-# # Plot increasing
-# def make_measures_increasing_one_setup(lines):
-#     measures = {
-#         "full-increase": 0,
-#         "increase-0.01": 0,
-#         "increase-0.05": 0,
-#         "increase-0.1": 0,
-#         "increase-overall": 0
-#     }
-#     for line in lines:
-#         measures["full-increase"] += check_increase(line, 0)
-#         measures["increase-0.01"] += check_increase(line, 0.01)
-#         measures["increase-0.05"] += check_increase(line, 0.05)
-#         measures["increase-0.1"] += check_increase(line, 0.1)
-#         measures["increase-overall"] += check_increase_overall(line)
-#     for m in measures.keys():
-#         measures[m] = float(measures[m] / len(lines))
-#     return measures
-
-# def check_increase(line, threshold):
-#     return np.all(line[1:]-line[:-1] >= -threshold)
-
-# def check_increase_overall(line):
-#     return line[-1] - line[0] >= 0
-
-# def get_lines_increasing(data, beam_sizes, n_attacker, metric):
-#     lines = defaultdict(lambda: np.zeros(len(beam_sizes)))
-#     bs2id = {bs: i for i, bs in enumerate(beam_sizes)}
-#     for d in data:
-#         if d["n_attacker"] == n_attacker:
-#             for value in d["results"]:
-#                 context = tuple(value["context"])
-#                 bsId = bs2id[d["beam_size"]]
-#                 lines[context][bsId] = value[metric]
-#     return np.array(list(lines.values()))
-
-# def make_measures_increasing(n_attacker, algo, exh, model, prefix, show=False):
-#     with open(prefix+f"results/{model.value}-{exh.value}/{algo.value}.json") as file:
-#         data = json.load(file)
-#     metric = "F1" if exh == Exhaustivness.FULL else "accuracy"
-#     bs = beam_sizes if exh == Exhaustivness.FULL else beam_sizes_smallest
-#     lines = get_lines_increasing(data, bs, n_attacker, metric)
-#     if show:
-#         plt.plot(bs, lines.T)
-#         plt.xlabel("Beam Size")
-#         plt.ylabel(metric)
-#         plt.xticks(bs)
-#         plt.title(f"{model.value}-{algo.value}-{exh.value}-n={n_attacker}")
-#         plt.show()
-#     return make_measures_increasing_one_setup(lines)
-
-# def render_table_increasing(prefix):
-#     all_measures = {}
-#     for algo, exh, model in tqdm(list(product(AlgoTypes, Exhaustivness, Models))):
-#         ns = n_attackers if exh == Exhaustivness.FULL else n_attackers_smallest
-#         for n in ns:
-#             key = f"{model.value}-{algo.value}-{exh.value}-{n=}"
-#             try: all_measures[key] = make_measures_increasing(
-#                 n, algo, exh, model, "../"
-#                 )
-#             except: pass
-#     return pd.DataFrame(all_measures).T
-
-# def plot_metric_short(metric, n_attackers, beam_sizes, 
-#                 exh: Exhaustivness, prefix="", ax=None, save=False, prop_cycle=0):
-#     model = Models.BASE
-#     if ax is None:
-#         ax = plt.gca()
-#         show = True
-#     else: show = False
-#     att = {value: i for i, value in enumerate(n_attackers)}
-#     bs = {value: i for i, value in enumerate(beam_sizes)}
-#     options = [(AlgoTypes.BASE.value, "-", "x"), 
-#                (AlgoTypes.STRUCTURED.value,"--", "+")]
-#     if exh == Exhaustivness.SMALLEST:
-#         options.append(("ILP", "-.", "D"))
-#     for algo, ls, marker in options:
-#         data = load_json(prefix+f"results/{model.value}-{exh.value}/{algo}.json")
-#         perfs = np.zeros((len(beam_sizes), len(n_attackers)))
-#         for datum in data:
-#             if datum["n_attacker"] not in att: continue
-#             if algo == "ILP":
-#                 perfs[:, att[datum["n_attacker"]]] = datum[f"{metric}-avg"]
-#             elif datum["beam_size"] in bs:
-#                 perfs[bs[datum["beam_size"]], att[datum["n_attacker"]]] = datum[f"{metric}-avg"]
-#         for j, n_attacker in enumerate(n_attackers):
-#             ax.plot(np.array(beam_sizes) + j, perfs[:,j], 
-#                      color=f"C{prop_cycle+j}", marker=marker, ls=ls)
+    index = ((df.model=="base")&(df.n==2)&(df.bs==256)&(df.heuristic.isna())&(df.exh=="full"))
+    df_ = df[index].groupby(["algo"]).n_calls.mean()
+    print(f"base model, full, n=2, bs=256:            base->ISI: {(df_.loc['base_algo'] - df_.loc['structured'])/df_.loc['base_algo']:.0%} less calls")
     
-#     ax.set_xlabel("Beam sizes")
-#     ax.set_ylabel(metric)
-
-# def plot_metrics_short(prefix="../"):
-#     sub_na_small = (4,11,20)
-#     sub_bs_small = (1, 22, 44, 66, 88, 100)
-#     _, axes = plt.subplots(2, 3, figsize=(9,4.5), sharey="row", sharex="col")
-#     plot_metric_short("F1", n_attackers, beam_sizes, Exhaustivness.FULL, 
-#                       prefix=prefix, ax=axes[0,0])
-#     plot_metric_short("accuracy", sub_na_small, sub_bs_small, Exhaustivness.SMALLEST, 
-#                       prefix=prefix, ax=axes[0,1], prop_cycle=3)
-#     plot_metric_short("time", n_attackers, beam_sizes, Exhaustivness.FULL, 
-#                       prefix=prefix, ax=axes[1,0])
-#     plot_metric_short("time", sub_na_small, sub_bs_small, Exhaustivness.SMALLEST, 
-#                       prefix=prefix, ax=axes[1,1], prop_cycle=3)
+    index = ((df.model=="base")&(df.n==5)&(df.bs==2)&(df.heuristic.isna())&(df.exh=="full"))
+    df_ = df[index].groupby(["algo"]).n_calls.mean()
+    print(f"base model, full, n=5, bs=2:              base->ISI: {(df_.loc['base_algo'] - df_.loc['structured'])/df_.loc['base_algo']:.0%} less calls")
     
-    
-#     for ax in axes.flatten():
-#         ax.grid(axis="y")
-    
-#     axes[1,1].set_ylabel("")
-#     axes[0,0].set_xlabel("")
-#     axes[0,1].set_xlabel("")
-    
-#     axes[1,0].set_yscale("log")
-#     axes[1,1].set_yscale("log")
-    
-#     # Legend
-#     for j, n_attacker in enumerate(n_attackers + sub_na_small):
-#         axes[0,2].plot([],[],c=f"C{j}",label=f"n={n_attacker}")
-#     axes[0,2].plot([],[],c="grey", marker="x", label="Base algo")
-#     axes[0,2].plot([],[],c="grey",ls="--", marker="+", label="ISI algo")
-#     axes[0,2].plot([],[],c="grey",ls="-.", marker="D", label="ILP")
-#     axes[0,2].legend(loc="center left")
-#     axes[0,2].set_axis_off()
-#     axes[1,2].set_axis_off()
-#     axes[1,0].set_xticks(beam_sizes)
-#     axes[1,1].set_xticks(sub_bs_small)
-    
-#     axes[0,0].set_title("Full identification")
-#     axes[0,1].set_title("Smallest identification")
-#     plt.subplots_adjust(hspace=0.1)
-#     # plt.tight_layout()
-#     plt.savefig(prefix+"results/fig_short.pdf")
-
-# def plot_distribution_short(metric, n_attacker, algo, exh, model, lucb_label, beam_sizes, ax=None, prefix="../", plot_type="violin"):
-#     if ax is None:
-#         ax = plt.gca()
-
-#     lab = f"-{lucb_label}" if lucb_label else ""
-#     data = load_json(prefix+f"results/{model.value}-{exh.value}/{algo.value}{lab}.json")
-#     values = {}
-#     for datum in data:
-#         if datum["beam_size"] == -1 or datum["n_attacker"] != n_attacker: continue
-#         values[datum["beam_size"]] = [res[metric] for res in datum["results"]]
-    
-#     X_val = sorted(beam_sizes)
-#     Y = [values[x] for x in X_val]
-#     X = np.arange(len(X_val))
-#     if plot_type == "violin":
-#         ax.violinplot(Y, positions=X)
-#     elif plot_type == "box":
-#         ax.boxplot(Y, positions=X)
-#     ax.plot(X, np.mean(Y, axis=1), "x", c="black")
-#     ax.set_xticks(X, X_val)
-
-# def plot_distributions_short(n_attackers, exh, beam_sizes, prefix="../", plot_type="violin"):
-#     _, axes = plt.subplots(4,3, sharex=True, sharey='row', squeeze=False, figsize=(6,8))
-#     model = Models.BASE
-#     if exh == Exhaustivness.FULL: m = "F1"
-#     else: m = "accuracy"
-#     lucb_label = ""
-#     for i, n_attacker in enumerate(n_attackers):
-#         plot_distribution_short(m, n_attacker, AlgoTypes.BASE, exh, 
-#                           model, lucb_label, beam_sizes, axes[0,i], prefix, plot_type)
-#         plot_distribution_short("time", n_attacker, AlgoTypes.BASE, exh, 
-#                           model, lucb_label, beam_sizes, axes[1,i], prefix, plot_type)
-#         plot_distribution_short(m, n_attacker, AlgoTypes.STRUCTURED, exh, 
-#                           model, lucb_label, beam_sizes, axes[2,i], prefix, plot_type)
-#         plot_distribution_short("time", n_attacker, AlgoTypes.STRUCTURED, exh, 
-#                           model, lucb_label, beam_sizes, axes[3,i], prefix, plot_type)
-    
-#     axes[0,0].set_ylabel(f"Base algo\n\n{m}")
-#     axes[1,0].set_ylabel("Base algo\n\ntime (s)")
-    
-#     axes[2,0].set_ylabel(f"ISI algo\n\n{m}")
-#     axes[3,0].set_ylabel("ISI algo\n\ntime (s)")
-    
-#     for i in range(3): 
-#         axes[-1,i].set_xlabel("Beam size")
-#         axes[0,i].set_title(f"n={n_attackers[i]}")
-    
-    
-#     plt.tight_layout()
-#     plt.savefig(prefix+f"results/distributions_{exh.value}_short.pdf")
-#     plt.show()
+    index = ((df.model=="non-boolean")&(df.n==10)&(df.bs==16)&(df.heuristic.isna())&(df.exh=="full"))
+    df_ = df[index].groupby(["algo"]).n_calls.mean()
+    print(f"non-boolean model, full, n=10, bs=16:     base->ISI: {(df_.loc['base_algo'] - df_.loc['structured'])/df_.loc['base_algo']:.0%} less calls")
