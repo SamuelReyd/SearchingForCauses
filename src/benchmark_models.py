@@ -1,7 +1,6 @@
 import math, numpy as np
 from utils import generate_subsets, elementwise_any, elementwise_max
 from sympy import symbols, Equivalent, to_cnf, Or, And, Not
-# from actualcauses import lucb
 from actualcauses_local.scm import SCM
 from actualcauses_local.lucb import lucb
 from actualcauses_local.system_model import *
@@ -40,15 +39,15 @@ or_scm = SCM(V=["X", "A", "B", "T"],U=["x"],u=[1],D=(0,1),
              model=OrModel(["X", "A", "B", "T"]),
              dag={"X":[], "A":["X"], "B":["A"], "T":["A", "B"]})
 
-class XNORModel(BaseNumpyModel):
+class XORModel(BaseNumpyModel):
     def simulate(self, u):
         self["X"] = u[0]
         self["A"] = self["X"]
         self["B"] = ~self["X"]
         self["T"] = self["A"] != self["B"]
     
-xnor_scm = SCM(V=["X", "A", "B", "T"],U=["x"],u=[1],D=(0,1),
-               model=XNORModel(["X", "A", "B", "T"]),
+xor_scm = SCM(V=["X", "A", "B", "T"],U=["x"],u=[1],D=(0,1),
+               model=XORModel(["X", "A", "B", "T"]),
                dag={"X":[], "A":["X"], "B":["X"], "T":["A", "B"]})
 
 chain_vars = ["X", "J", "H", "G", "B", "T"]

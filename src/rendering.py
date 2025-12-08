@@ -167,12 +167,13 @@ def plot_tradeoff(df, exh, algo, n, quality_metric, ax=None):
     ax.errorbar(t, q, xerr=t_std, yerr=q_std, ls='--',capsize=2, ecolor="grey")
     for xi, yi, label in zip(t, q, bs):
         ax.text(xi, yi, label, fontsize=9, ha='right', va='bottom')
-    ax.set_ylim(min(q)-12, max(q) + 10)
+    ax.set_ylim(min(q)-12, max(q) + .1*(max(q)-min(q)))
     ax.set_xlabel("time (s)")
+    ax.set_ylabel(quality_metric)
     ax.set_xscale("log")
 
 def plot_full_tradeoffs(df, folder="figures/"):
-    _, axes = plt.subplots(1,3, figsize=(3*w, 1.5*h))
+    # _, axes = plt.subplots(1,3, figsize=(3*w, 1.5*h))
     comps = (
         ("full", "base_algo", 2), 
         ("full", "structured", 10),
@@ -180,12 +181,14 @@ def plot_full_tradeoffs(df, folder="figures/"):
     )
     for i, (exh, algo, n) in enumerate(comps):
         metric = "dice" if exh == "full" else "accuracy"
-        plot_tradeoff(df, exh, algo, n, metric, axes[i])
+        plot_tradeoff(df, exh, algo, n, metric)
         lab = "ISI" if algo == "structured" else algo
-        axes[i].set_title(f"{exh} - {lab} - n={n}")
-    plt.tight_layout()
-    plt.savefig(folder + "tradeoffs.pdf")
-    plt.show()
+        # axes[i].set_title(f"{exh} - {lab} - n={n}")
+        plt.savefig(folder + f"tradeoffs-{exh}-{lab}-n={n}.pdf")
+        plt.show()
+    # plt.tight_layout()
+    # plt.savefig(folder + "tradeoffs.pdf")
+    # plt.show()
 
 # == Heuristic figure ==
 def plot_heuristic(df, folder="figures/"):
@@ -344,40 +347,71 @@ def plot_reg_x_per_z(df, zs, z_label, x_label, exh, algo, ax=None, y_label="n_ca
         ax.plot(X,Y_pred, c=f"C{i}",ls='--')
 
 # == Tables comparing the algorithm improvements ==
-def show_call_gain_ISI(df, latex=True):
-    index = ((df.model=="base")|(df.model=="non-boolean"))&(df.heuristic.isna())&(df.exh=="full")
-    df_ = df[index].groupby(["algo", "n", "bs", "model"], as_index=False).n_calls.mean()
-    df_ = df_.set_index(["n", "bs", "model"]).pivot(columns="algo")
-    df_ = (df_[('n_calls',  'base_algo')] - df_[('n_calls',  'structured')]) / df_[('n_calls',  'base_algo')] *100
-    df_ = df_.to_frame().reset_index().pivot(columns="model", index=["n", "bs"])
-    if latex: print(df_.to_latex(float_format="%.0f"))
-    else: return df_
+def fmt(m, s):
+    return rf"{m:.0f} \textcolor{{gray}}{{\scriptsize$\pm$ {s:.0f}}}"
+    
+def save_latex(mean, std, name, folder):
+    latex_df = mean.copy()
+    for c in mean.columns:
+        latex_df[c] = [
+            fmt(m, s)
+            for m, s in zip(mean[c], std[c])
+        ]
+    latex_df.columns.name = None
+    latex = latex_df.to_latex(escape=False, column_format="cc|cc")
+    latex = latex.replace(r"\multirow[t]{", r"\multirow{")
+    latex_document = r"""
+    \documentclass{article}
+    \usepackage{booktabs}
+    \usepackage{multirow}
+    \usepackage{xcolor}
+    \begin{document}
+    
+    % The table:
+    """ + latex + r"""
+    
+    \end{document}
+    """
+    
+    with open(folder + name + ".tex", "w") as f:
+        f.write(latex)
 
-def show_call_gain_LUCB(df, latex=True):
-    index = (df.model=="noisy")&(df.heuristic.isna())&(df.exh=="full")
-    df_ = df[index].groupby(["algo", "n", "bs", "lucb_label"], as_index=False).n_calls.mean()
-    df_ = df_.set_index(["n", "bs", "algo"]).pivot(columns="lucb_label")
-    df_ = (df_[('n_calls',  'naive')] - df_[('n_calls',  'lucb')]) / df_[('n_calls',  'naive')] * 100
-    df_ = df_.to_frame().reset_index().pivot(columns="algo", index=["n", "bs"])
-    if latex: print(df_.to_latex(float_format="%.0f"))
-    else: return df_
+def format_df(mean, std):
+    formatted = mean.copy()
+    for c in mean.columns:
+        formatted[c] = mean[c].combine(
+            std[c],
+            lambda m, s: f"{m:.0f} ± {s:.0f}"
+        )
+    return formatted
 
-def show_dice_gain_ISI(df, latex=True):
-    index = ((df.model=="base")|(df.model=="non-boolean"))&(df.heuristic.isna())&(df.exh=="full")
-    df_ = df[index].groupby(["algo", "n", "bs", "model"], as_index=False).dice.mean()
-    df_ = df_.set_index(["n", "bs", "model"]).pivot(columns="algo")
-    df_ = df_[('dice',  'structured')] - df_[('dice',  'base_algo')]
-    df_ = df_.to_frame().reset_index().pivot(columns="model", index=["n", "bs"])
-    if latex: print(df_.to_latex(float_format="%.0f"))
-    else: return df_
-
-def show_dice_gain_LUCB(df, latex=True):
-    index = ((df.model=="noisy"))
-    df_ = df[index].groupby(["algo","n","bs","lucb_label"]).dice.mean()
-    df_ = df_.reset_index().pivot(columns="lucb_label", index=["algo","n","bs"])
-    df_ = (df_[("dice", "lucb")] - df_[("dice", "naive")]).reset_index().pivot(columns="algo", index=["n", "bs"])
-    if latex: print(df_.to_latex(float_format="%.1f"))
-    else: return df_
+def compare_algo(df, algo_comp, metric, name=None, folder="tables/"):
+    if algo_comp == "ISI": 
+        ref = "model"
+        labels_ref = ["base", "non-boolean"]
+        comp = "algo"
+        labels_comp = ["base_algo", "structured"]
+        group = "model"
+        index = ((df.model=="base")|(df.model=="non-boolean"))&(df.heuristic.isna())&(df.exh=="full")
+    else: 
+        ref = "algo"
+        labels_ref = ["base_algo", "structured"]
+        comp = "lucb_label"
+        labels_comp = ["naive", "lucb"]
+        group = "lucb_label"
+        index = (df.model=="noisy")&(df.heuristic.isna())&(df.exh=="full")
+    if metric == "n_calls":
+        do_comp = lambda df_: (df_[labels_comp[0]] - df_[labels_comp[1]]) / df_[labels_comp[0]] * 100
+    else:
+        do_comp = lambda df_: df_[labels_comp[1]] - df_[labels_comp[0]]
+    df_ = df[index].groupby(["algo", "n", "bs", group, "u"], as_index=False)[metric].mean()
+    df_ = df_.set_index(["n", "bs", ref, "u"]).pivot(columns=comp, values=metric)
+    df_ = do_comp(df_)
+    df_ = df_.to_frame().reset_index().pivot(columns=ref, index=["n", "bs", "u"], values=0)
+    mean = df_.groupby(["n", "bs"])[labels_ref].mean()
+    std = df_.groupby(["n", "bs"])[labels_ref].std()
+    if name is not None: save_latex(mean, std, name, folder)
+    return format_df(mean, std)
 
 # == Retrieve and show some relevant number to put in article ==
 def locate_text_numbers(df):

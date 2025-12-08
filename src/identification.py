@@ -6,8 +6,8 @@ from collections import defaultdict
 
 from benchmark_models import SMKModel, get_SMK_SCM, get_SMK_V, get_mSMK_SCM, get_bbSMK_SCM, get_avg_nSMK_SCM, get_lucb_nSMK_SCM
 # from actualcauses import beam_search, iterative_identification
-from actualcauses_local.base_algorithm import beam_search
-from actualcauses_local.iterative_subinstance_algorithm import iterative_identification
+from actualcauses_local.base_algorithm import mbs
+from actualcauses_local.iterative_subinstance_algorithm import isi
 
 from ILP_why import ilp_SMK
 from general import *
@@ -89,14 +89,11 @@ def run_one_SMK(contexts, exh, model, algo, bs, n, heuristic, lucb_label,
             "time": scm.identification_time,
             "seed": seed
         }
-        # if lucb_label == "lucb": res["lucb_info"] = params["lucb_info"]
-        # else: res["lucb_info"] = None
         data["results"].append(res)
     return data
 
 
 # === ILP ===
-
 def serialize_rule_ILP(C, W, instance, variables):
     var_map = {val: i for i, val in enumerate(variables)}
     rules = [(v.name,1-int(instance[var_map[v.name]])) for v in C]

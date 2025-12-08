@@ -7,8 +7,8 @@ from general import *
 from general import Exhaustivness, Models, AlgoTypes
 from benchmark_models import get_bbSMK_SCM, get_SMK_SCM
 # from actualcauses import beam_search, iterative_identification
-from actualcauses_local.base_algorithm import beam_search, get_sets
-from actualcauses_local.iterative_subinstance_algorithm import iterative_identification
+from actualcauses_local.mbs import beam_search, get_sets
+from actualcauses_local.isi import iterative_identification
 
 # === Evaluation token ===
 # def evaluate_smallest(causes, ref_causes):

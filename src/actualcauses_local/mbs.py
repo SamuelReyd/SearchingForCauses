@@ -3,7 +3,8 @@ from tqdm import tqdm
 from itertools import count
 from collections import defaultdict
 
-def render_step(verbose, causes, non_causes):
+def render_step(verbose, causes, non_causes, Cs):
+    non_causes = [v for v in non_causes if not any([c <= v[3] for c in Cs])]
     if len(non_causes):
         if verbose == 2:
             non_causes = sorted(non_causes, key=sort_key)
@@ -243,7 +244,7 @@ def beam_search(
         else:
             beams = get_next_beams(non_AC2 + AC2, beam_size, [])
         # Render step output
-        render_step(verbose, causes, non_AC2)
+        render_step(verbose, causes, non_AC2, Cs)
 
     # Render final result
     if verbose:
