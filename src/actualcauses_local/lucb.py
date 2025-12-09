@@ -1,7 +1,7 @@
 import numpy as np, time, matplotlib.pyplot as plt
 from tqdm import tqdm
 
-from .base_algorithm import beam_search, get_rules, show_rules, get_sets
+from .mbs import beam_search, get_rules, show_rules, get_sets
 
 # This file is inspired by https://github.com/marcotcr/anchor
 

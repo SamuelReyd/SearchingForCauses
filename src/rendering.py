@@ -303,34 +303,31 @@ def find_model(x,y, verbose=False):
     return sorted_results[0]
 
 def plot_all_regressions(df, folder="figures/"):
-    _, axes = plt.subplots(2,3, figsize=(3*w*2,2*h*2))
-
+    for exh in ("smallest", "full"):
+        _, axes = plt.subplots(2,2, figsize=(2*w*1.5,2*h*1.5))
     
-    axes[0,0].set_title("Smallest - Beam Search")
-    axes[0,1].set_title("Full - Beam Search")
-    axes[0,2].set_title("Full - ISI")
-
-    ns = (2,4,6,8,10,12,14)
-    plot_reg_x_per_z(df, ns, "n", "bs", "smallest", "base_algo", axes[0,0])
-    plot_reg_x_per_z(df, ns, "n", "bs", "full", "base_algo", axes[0,1])
-    plot_reg_x_per_z(df, ns, "n", "bs", "full", "structured", axes[0,2])
-
-    bss = (2,4,8,16,32,64,128,256)
-    plot_reg_x_per_z(df, bss, "bs", "n", "smallest", "base_algo", axes[1,0])
-    plot_reg_x_per_z(df, bss, "bs", "n", "full", "base_algo", axes[1,1])
-    plot_reg_x_per_z(df, bss, "bs", "n", "full", "structured", axes[1,2])
-
-    for ax in axes.flatten():
-        ax.legend(ncols=2)
-        formatter = ticker.ScalarFormatter(useMathText=True)
-        formatter.set_powerlimits((0, 0))  
-        ax.yaxis.set_major_formatter(formatter)
-        ax.set_ylabel("n_calls")
-    for ax in axes[0,:]: ax.set_xlabel("beam size")
-    for ax in axes[1,:]: ax.set_xlabel("|V|")
-    plt.tight_layout()
-    plt.savefig(folder+"regressions.pdf")
-    plt.show()
+        axes[0,0].set_title("MBS")
+        axes[0,1].set_title("ISI")
+    
+        ns = (2,4,6,8,10,12,14)
+        plot_reg_x_per_z(df, ns, "n", "bs", exh, "base_algo", axes[0,0])
+        plot_reg_x_per_z(df, ns, "n", "bs", exh, "structured", axes[0,1])
+    
+        bss = (2,4,8,16,32,64,128,256)
+        plot_reg_x_per_z(df, bss, "bs", "n", exh, "base_algo", axes[1,0])
+        plot_reg_x_per_z(df, bss, "bs", "n", exh, "structured", axes[1,1])
+    
+        for ax in axes.flatten():
+            ax.legend(ncols=2)
+            formatter = ticker.ScalarFormatter(useMathText=True)
+            formatter.set_powerlimits((0, 0))  
+            ax.yaxis.set_major_formatter(formatter)
+        for ax in axes[0,:]: ax.set_xlabel("beam size")
+        for ax in axes[1,:]: ax.set_xlabel("|V|")
+        for ax in axes[:,0]: ax.set_ylabel("n_calls")
+        plt.tight_layout()
+        plt.savefig(folder+f"regressions-{exh}.pdf")
+        plt.show()
 
 def plot_reg_x_per_z(df, zs, z_label, x_label, exh, algo, ax=None, y_label="n_calls"):
     if ax is None: ax = plt.gca()
@@ -343,8 +340,8 @@ def plot_reg_x_per_z(df, zs, z_label, x_label, exh, algo, ax=None, y_label="n_ca
         if not df_.index.size: continue
         X, Y = df_.index.array, df_[y_label].array
         fit, (r2, Y_pred, coefs) = find_model(X,Y)
-        ax.plot(X,Y, "x", c=f"C{i}", ls='-', label=f"{z_label}={int(z)}: {fit} {r2:.0%}")
-        ax.plot(X,Y_pred, c=f"C{i}",ls='--')
+        ax.plot(X+.1*i,Y, "x", c=f"C{i}", ls='-', label=f"{z_label}={int(z)}: {fit} {r2:.0%}")
+        ax.plot(X+.1*i,Y_pred, c=f"C{i}",ls='--')
 
 # == Tables comparing the algorithm improvements ==
 def fmt(m, s):

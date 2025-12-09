@@ -1,7 +1,7 @@
 from collections.abc import Iterable
 import time
-from .base_algorithm import beam_search, show_rules
-from .iterative_subinstance_algorithm import iterative_identification
+from .mbs import beam_search, show_rules
+from .isi import iterative_identification
 from .system_model import SystemModel
 from typing import Any
 
