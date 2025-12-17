@@ -32,30 +32,30 @@ lucb_params = {"a": .65,
 # Define experiments and parameters
 exps = (
     # Exact results
-    (Exhaustivness.EXACT, Models.BASE, AlgoTypes.STRUCTURED, [-1], n_attackers, [None], None, -1),
+    (Exhaustivness.EXACT, Models.BASE, AlgoTypes.STRUCTURED, [-1], n_attackers, [None], None),
     # Full Base
-    (Exhaustivness.FULL, Models.BASE, AlgoTypes.BASE, beam_sizes, n_attackers, [None], None, 7),
-    (Exhaustivness.FULL, Models.BASE, AlgoTypes.STRUCTURED, beam_sizes, n_attackers, [None], None, 7),
+    (Exhaustivness.FULL, Models.BASE, AlgoTypes.BASE, beam_sizes, n_attackers, [None], None),
+    (Exhaustivness.FULL, Models.BASE, AlgoTypes.STRUCTURED, beam_sizes, n_attackers, [None], None),
     # Full Non-Boolean
-    (Exhaustivness.FULL, Models.NON_BOOLEAN, AlgoTypes.BASE, beam_sizes, n_attackers, [None], None, 7),
-    (Exhaustivness.FULL, Models.NON_BOOLEAN, AlgoTypes.STRUCTURED, beam_sizes, n_attackers, [None], None, 7),
+    (Exhaustivness.FULL, Models.NON_BOOLEAN, AlgoTypes.BASE, beam_sizes, n_attackers, [None], None),
+    (Exhaustivness.FULL, Models.NON_BOOLEAN, AlgoTypes.STRUCTURED, beam_sizes, n_attackers, [None], None),
     # Heuristics
-    (Exhaustivness.FULL, Models.BASE, AlgoTypes.BASE, [8], [2], heuristics_refs.keys(), None, 7),
-    (Exhaustivness.FULL, Models.BASE, AlgoTypes.STRUCTURED, [64], [10], heuristics_refs.keys(), None, 7),
+    (Exhaustivness.FULL, Models.BASE, AlgoTypes.BASE, [8], [2], heuristics_refs.keys(), None),
+    (Exhaustivness.FULL, Models.BASE, AlgoTypes.STRUCTURED, [64], [10], heuristics_refs.keys(), None),
     # Noisy
-    (Exhaustivness.FULL, Models.NOISY, AlgoTypes.STRUCTURED, beam_sizes, n_attackers, [None], "naive", 7),
-    (Exhaustivness.FULL, Models.NOISY, AlgoTypes.STRUCTURED, beam_sizes, n_attackers, [None], "lucb", 7),
-    (Exhaustivness.FULL, Models.NOISY, AlgoTypes.BASE, beam_sizes, n_attackers, [None], "naive", 7),
-    (Exhaustivness.FULL, Models.NOISY, AlgoTypes.BASE, beam_sizes, n_attackers, [None], "lucb", 7),
+    (Exhaustivness.FULL, Models.NOISY, AlgoTypes.STRUCTURED, beam_sizes, n_attackers, [None], "naive"),
+    (Exhaustivness.FULL, Models.NOISY, AlgoTypes.STRUCTURED, beam_sizes, n_attackers, [None], "lucb"),
+    (Exhaustivness.FULL, Models.NOISY, AlgoTypes.BASE, beam_sizes, n_attackers, [None], "naive"),
+    (Exhaustivness.FULL, Models.NOISY, AlgoTypes.BASE, beam_sizes, n_attackers, [None], "lucb"),
     )
 
 exps_reg = (
     # Full reg
-    (Exhaustivness.FULL, Models.BASE, AlgoTypes.BASE, beam_sizes, reg_attackers, [None], None, 7),
-    (Exhaustivness.FULL, Models.BASE, AlgoTypes.STRUCTURED, beam_sizes, reg_attackers, [None], None, 7),
+    (Exhaustivness.FULL, Models.BASE, AlgoTypes.BASE, beam_sizes, reg_attackers, [None], None),
+    (Exhaustivness.FULL, Models.BASE, AlgoTypes.STRUCTURED, beam_sizes, reg_attackers, [None] + [-1], None),
     # Smallest
-    (Exhaustivness.SMALLEST, Models.BASE, AlgoTypes.BASE, beam_sizes, reg_attackers, [None], None, -1),
-    (Exhaustivness.SMALLEST, Models.BASE, AlgoTypes.STRUCTURED, beam_sizes, reg_attackers, [None], None, -1),
+    (Exhaustivness.SMALLEST, Models.BASE, AlgoTypes.BASE, beam_sizes, reg_attackers, [None], None),
+    (Exhaustivness.SMALLEST, Models.BASE, AlgoTypes.STRUCTURED, beam_sizes, reg_attackers, [None] + [-1], None),
 )
 
 # Main

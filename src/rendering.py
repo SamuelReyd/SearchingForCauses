@@ -10,6 +10,7 @@ from sklearn.metrics import r2_score
 from general import *
 
 w,h=3.1,2.1
+label_map = {"structured":"ISI", "bs":"b", "n":"n", "base_algo":"MBS", "ILP":"ILP"}
 
 # == Retrieve values ==
 def get_values(exps, metrics, folder="results/"):
@@ -113,7 +114,7 @@ def plot_metric_mean(df, models, metrics, no_share=None, folder="figures/"):
     for algo in set(df.algo):
         if algo == AlgoTypes.STRUCTURED.value: ls = "--"
         else: ls = "-"
-        axes[1,0].plot([], c="grey", ls=ls, label=algo)
+        axes[1,0].plot([], c="grey", ls=ls, label=label_map[algo])
     axes[1,0].legend()
     
     for ax, metric in zip(axes.T[0], metrics): ax.set_ylabel(metric)
@@ -149,18 +150,18 @@ def plot_spaguetti(df, models, algo, metric):
 
 # == Tradeff figure ==
 def plot_tradeoff(df, exh, algo, n, quality_metric, ax=None):
-    if ax is None: ax = plt.gca()
+    if ax is None: 
+        plt.figure(figsize=(w,h))
+        ax = plt.gca()
     index = (
         (df.exh==exh) & (df.heuristic.isna()) & (df.algo == algo) & (df.model == "base") & (df.n == n)
     )
-    # print(df[index])
     group = df[index].groupby(["bs"], dropna=False)
     stds = group[[quality_metric,"time"]].std()
     df_ = group.mean([quality_metric, "time"])
     
     t_std = stds.time / 2
     q_std = stds[quality_metric] / 2
-    # print(df_)
     bs = df_.index.array
     t = df_.time.array
     q = df_[quality_metric].array
@@ -173,7 +174,6 @@ def plot_tradeoff(df, exh, algo, n, quality_metric, ax=None):
     ax.set_xscale("log")
 
 def plot_full_tradeoffs(df, folder="figures/"):
-    # _, axes = plt.subplots(1,3, figsize=(3*w, 1.5*h))
     comps = (
         ("full", "base_algo", 2), 
         ("full", "structured", 10),
@@ -183,12 +183,8 @@ def plot_full_tradeoffs(df, folder="figures/"):
         metric = "dice" if exh == "full" else "accuracy"
         plot_tradeoff(df, exh, algo, n, metric)
         lab = "ISI" if algo == "structured" else algo
-        # axes[i].set_title(f"{exh} - {lab} - n={n}")
-        plt.savefig(folder + f"tradeoffs-{exh}-{lab}-n={n}.pdf")
+        plt.savefig(folder + f"tradeoffs-{exh}-{lab}-n={n}.pdf", bbox_inches="tight")
         plt.show()
-    # plt.tight_layout()
-    # plt.savefig(folder + "tradeoffs.pdf")
-    # plt.show()
 
 # == Heuristic figure ==
 def plot_heuristic(df, folder="figures/"):
@@ -220,10 +216,10 @@ def show_smallest_comparison(df, beam_sizes, ax=None):
     
     for c, (algo, bs) in enumerate(comps):
         index = (df.exh == "smallest") & (df.algo == algo)
-        label = "ISI" if algo == "structured" else algo
+        label = label_map[algo]
         if bs is not None: 
             index &= (df.bs == bs)
-            label += f" - b={bs}"
+            label += f"{bs}"
         ax.plot([],label=label, c=f"C{c}", marker="x")
         df_ = df[index].groupby(["n"], as_index=False).mean(["time", "accuracy"])
         ns = df_.index.array
@@ -241,7 +237,7 @@ def show_smallest_comparison(df, beam_sizes, ax=None):
     ax.set_yscale("log")
     ax.set_ylabel("time (s)")
     ax.set_xlabel("|V|")
-    ax.legend(loc="center right")
+    ax.legend(loc="lower right", ncols=1)
 
 def show_smallest_perf(df, beam_sizes, ax=None):
     if ax is None: ax = plt.gca()
@@ -255,11 +251,11 @@ def show_smallest_perf(df, beam_sizes, ax=None):
     ax.set_ylabel("Accuracy")
 
 def plot_smallest(df, folder="figures/"):
-    _, axes = plt.subplots(1,2, figsize=(3.5*w, 2*h))
+    _, axes = plt.subplots(1,2, figsize=(3*w, 1.5*h))
     show_smallest_comparison(df, (4,32,256), ax=axes[0])
     show_smallest_perf(df, (2,4,6,16,32,64), ax=axes[1])
-    axes[0].set_title("Time against system size for several algoritms")
-    axes[1].set_title("Accuracy against system size for the base algorithm")
+    axes[0].set_title("Time against system size")
+    axes[1].set_title("Accuracy against system size (MBS)")
     plt.tight_layout()
     plt.savefig(folder+"smallest_fig.pdf")
     plt.show()

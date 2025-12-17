@@ -132,7 +132,7 @@ def get_rules(previous_rules, V, D, v, actual_values, Cs=[], R=[], verbose=False
                 new_rules.add(tuple(sorted(new_rule)))
     return [beam + R for beam in sorted(new_rules)]
 
-def get_next_beams(non_causes, beam_size, Cs):
+def get_next_beam(non_causes, beam_size, Cs):
     non_causes = [v for v in non_causes if not any([c <= v[3] for c in Cs])]
     # Score and sort the remaining
     non_causes = sorted(non_causes, key=sort_key)
@@ -140,12 +140,12 @@ def get_next_beams(non_causes, beam_size, Cs):
     if beam_size != -1:
         non_causes = non_causes[:beam_size]
     # Keep only the interventions to build next ones
-    beams = [rule_value[0] for rule_value in non_causes]
-    return beams
+    beam = [rule_value[0] for rule_value in non_causes]
+    return beam
 
-def split_rules(beams, cf_values, actual_values, epsilon):
+def split_rules(beam, cf_values, actual_values, epsilon):
     causes, non_causes = [], []
-    for rule, (cf_output, cf_score) in zip(beams, cf_values):
+    for rule, (cf_output, cf_score) in zip(beam, cf_values):
         C, W = get_sets(rule, actual_values)
         rule_value = (rule, float(cf_output), float(cf_score), C, W)
 
@@ -156,24 +156,28 @@ def split_rules(beams, cf_values, actual_values, epsilon):
             non_causes.append(rule_value)
     return causes, non_causes
 
-def check_early_stop(beams, early_stop, all_causes, max_time, init_time):
-    if not len(beams): return True
+def check_early_stop(beam, early_stop, all_causes, max_time, init_time):
+    if not len(beam): return True
     if early_stop and len(all_causes): return True
     if max_time is not None and time.time()-init_time > max_time: return True
     return False
 
-def do_simulation(simulation, cache, beams):
-    if cache is None: return simulation(beams)
+def do_simulation(simulation, cache, beam):
+    if cache is None: return simulation(beam)
     cached_results = []
-    non_cached_beams = []
-    for e in beams:
+    non_cached_beam = []
+    for e in beam:
         if e in cache:
             cached_results.append(cache[e])
         else:
-            non_cached_beams.append(e)
-    cf_values = simulation(non_cached_beams)
-    cache |= dict(zip(non_cached_beams, cf_values))
+            non_cached_beam.append(e)
+    cf_values = simulation(non_cached_beam)
+    cache |= dict(zip(non_cached_beam, cf_values))
     return cached_results + cf_values
+
+# def test_empty(simulation):
+#     beam = [()]
+#     cf_values = simulation(beam)
 
 def beam_search(
     v, D, simulation, V, # SCM
@@ -193,31 +197,33 @@ def beam_search(
     # print(I, V)
     if not minimality: full_interventions = []
     init_time = time.time()
-    beams = None
+    beam = None
     if Cs is None: Cs = []
     if max_steps == -1 or max_steps is None: iterator = count(start=1, step=1)
     else: iterator = range(1,max_steps+1)
+
+    # if test_empty(simulation): iterator = range(0,-1)
 
     for t in tqdm(iterator, disable=(verbose!=1)):
         # Render the step
         if verbose >= 2: print(f"{f'Step {t}':=^30}")
             
         # Create the rules for step t base on the ones from t-1, we use the initial ones if t==1
-        beams = get_rules(beams, V, D, v, actual_values, 
+        beam = get_rules(beam, V, D, v, actual_values, 
                           Cs=Cs if minimality else [], 
                           R=R, verbose=verbose >= 3)
 
         # Check for early stop
-        if check_early_stop(beams, early_stop, all_causes, max_time, init_time):
+        if check_early_stop(beam, early_stop, all_causes, max_time, init_time):
             break
             
         # Render how many nodes will be evaluated
-        if verbose >= 2: print(f"Evaluating {len(beams)} rules")
+        if verbose >= 2: print(f"Evaluating {len(beam)} rules")
 
         # Evaluate the rules using the simulation 
-        cf_values = do_simulation(simulation, cache, beams)
+        cf_values = do_simulation(simulation, cache, beam)
         # Build the tuples of rule values
-        AC2, non_AC2 = split_rules(beams, cf_values, actual_values, epsilon)
+        AC2, non_AC2 = split_rules(beam, cf_values, actual_values, epsilon)
 
         # Filter causes to keep only minimal ones
         causes = filter_minimality(AC2)
@@ -238,11 +244,11 @@ def beam_search(
         for rule_value in causes:
             Cs.append(rule_value[3])
 
-        # Build next beams
+        # Build next beam
         if minimality:
-            beams = get_next_beams(non_AC2, beam_size, Cs)
+            beam = get_next_beam(non_AC2, beam_size, Cs)
         else:
-            beams = get_next_beams(non_AC2 + AC2, beam_size, [])
+            beam = get_next_beam(non_AC2 + AC2, beam_size, [])
         # Render step output
         render_step(verbose, causes, non_AC2, Cs)
 

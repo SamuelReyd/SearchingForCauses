@@ -5,9 +5,8 @@ from actualcauses_local.scm import SCM
 from actualcauses_local.lucb import lucb
 from actualcauses_local.system_model import *
 from tqdm import tqdm
+from scipy.stats import mode
 from collections import defaultdict
-
-"""Base model"""
 
 
 """Rock Throwing"""
@@ -25,6 +24,221 @@ class RockThrowingModel(BaseNumpyModel):
 scm_suzzy = SCM(V=suzzy_vars, U=["st","bt"], D=[(0,1)]*5, 
                 model=RockThrowingModel(suzzy_vars), 
                 u=(1,1), dag=suzzy_dag)
+
+exp_suzzy = [{"SH"}, {"ST"}]
+
+"""Sanity check models"""
+# Forest Fire
+class ForestFireModel(BaseNumpyModel):
+    def __init__(self, disjunctive, V, phi=None, psi=None, dtype=bool):
+        super().__init__(V, phi=phi, psi=psi, dtype=dtype)
+        self.disjunctive=disjunctive
+        
+    def simulate(self, u):
+        self["L"] = u[0]
+        self["MD"] = u[1]
+        self["FF"] = self["L"] | self["MD"] if self.disjunctive else self["L"] & self["MD"]
+
+scm_ff_disj = SCM(V=["L", "MD", "FF"], U=["l","md"], D=(0,1), 
+                model=ForestFireModel(disjunctive=True, V=["L", "MD", "FF"]), 
+                u=(1,1), dag={"L":[], "MD": [], "FF":["L", "MD"]})
+
+exp_ff_disj = [{'L', 'MD'}]
+
+
+scm_ff_conj = SCM(V=["L", "MD", "FF"], U=["l","md"], D=(0,1), 
+                model=ForestFireModel(disjunctive=False, V=["L", "MD", "FF"]), 
+                u=(1,1), dag={"L":[], "MD": [], "FF":["L", "MD"]})
+
+exp_ff_conj = [{'L'}, {'MD'}]
+
+class ForestFireExtModel(BaseNumpyModel):
+    def simulate(self, u):
+        self["L"] = u[0]
+        self["MD"] = u[1]
+        self["A"] = self["L"] & ~self["MD"]
+        self["B"] = ~self["L"] & self["MD"]
+        self["C"] = self["L"] & self["MD"]
+        self["FF"] = self["A"] | self["B"] | self["C"]
+
+scm_ff_ext = SCM(V=["L", "MD", "A", "B", "C", "FF"], U=["l","md"], D=(0,1), 
+                model=ForestFireExtModel(V=["L", "MD", "A", "B", "C", "FF"]), 
+                u=(1,1), dag={"L":[], "MD": [], "A": ["L","MD"], "B": ["L","MD"], "C": ["L","MD"], "FF":["A", "B", "C"]})
+
+exp_ff_ext = [{'L'}, {'MD'}, {'C'}]
+
+# Prisoners
+class PrisonersModel(BaseNumpyModel):
+    def simulate(self, u):
+        self["A"] = u[0]
+        self["B"] = u[1]
+        self["C"] = u[2]
+        
+        self["D"] = (self["A"] & self["B"]) | self["C"] 
+
+scm_prisoners = SCM(V=["A","B","C","D"], U=["a","b","c"], D=(0,1), 
+                model=PrisonersModel(["A","B","C","D"]), 
+                u=(1,0,1), 
+                dag={"A":[], "B": [], "C":[], "D":["A", "B", "C"]})
+
+exp_prisoners = [{'C'}]
+
+# Rock Throwing Extended
+class RockThrowingExtendedModel(BaseNumpyModel):
+    def simulate(self, u):
+        self["ST"] = u[0]
+        self["BT"] = u[1]
+        self["W"] = u[2]
+        self["SH"] = self["ST"] & ~self["W"] 
+        self["BH"] = self["BT"] & ~self["W"] & ~self["SH"]
+        self["BS"] = self["SH"] | self["BH"]
+
+scm_rock_thr_ext = SCM(V=["ST","BT","W","SH","BH","BS"], U=["st","bt","w"], D=(0,1), 
+                model=RockThrowingExtendedModel(["ST","BT","W","SH","BH","BS"]), 
+                u=(1,1,0), 
+                dag={"ST":[], "BT": [], "W":[], "SH":["ST", "W"], "BH":["BT", "W"],"BS":["BH", "SH"]})
+
+exp_suzzy_ext = [{'ST'}, {'W'}, {'SH'}]
+
+# Assassin
+class AssassinModel(BaseNumpyModel):
+    def simulate(self, u):
+        self["AP"] = u[0]
+        self["BA"] = u[1]
+        self["VS"] = ~self["AP"] | self["BA"]
+
+scm_assassin_1 = SCM(V=["AP","BA","VS"], U=["ap","ba"], D=(0,1), 
+                model=AssassinModel(["AP","BA","VS"]), 
+                u=(0,1), 
+                dag={"AP":[], "BA": [], "VS":["AP", "BA"]})
+
+exp_assassin_1 = [{"AP", "BA"}]
+
+scm_assassin_2 = SCM(V=["AP","BA","VS"], U=["ap","ba"], D=(0,1), 
+                model=AssassinModel(["AP","BA","VS"], phi=lambda s: (s[:,-1] | (~s[:,1] & s[:,0])).astype(int)), 
+                u=(0,1), 
+                dag={"AP":[], "BA": [], "VS":["AP", "BA"]})
+
+exp_assassin_2 = []
+
+
+# Lamp
+class LampModel(BaseNumpyModel):
+    def simulate(self, u):
+        self["A"] = u[0]
+        self["B"] = u[1]
+        self["C"] = u[2]
+        self["L"] = (self["A"] == self["B"]) | (self["A"] == self["C"]) | (self["C"] == self["B"])
+
+scm_lamp = SCM(V=["A","B", "C", "L"], U=["a","b", "c"], D=[(-1,0,1)]*3+[(0,1)], 
+                model=LampModel(V=["A","B", "C", "L"], dtype=int), 
+                u=(1,-1,-1), 
+                dag={"A":[], "B": [], "C":[], "L":["A", "B", "C"]})
+
+exp_lamp = [{"B"},{"C"}]
+
+
+# Ranch decision
+class RanchModel(BaseNumpyModel):
+    def simulate(self, u):
+        self["A1"] = u[0]
+        self["A2"] = u[1]
+        self["A3"] = u[2]
+        self["A4"] = u[3]
+        self["A5"] = u[4]
+        head_agreement = self["A1"] == self["A2"]
+        stacked = np.stack([self["A2"],self["A3"], self["A4"], self["A5"]], axis=0)
+        tail_agreement = np.all(stacked == stacked[0, :], axis=0)
+        majority = ((self["A1"] + self["A2"] + self["A3"] + self["A4"] + self["A5"]) / 5) > .5
+        O = np.zeros(self.S.shape[0],dtype=bool)
+        O[head_agreement | tail_agreement] = self["A1"][head_agreement | tail_agreement]
+        O[~(head_agreement | tail_agreement)] = majority[~(head_agreement | tail_agreement)]
+        self["O"] = O
+
+scm_ranch = SCM(V=["A1", "A2", "A3", "A4", "A5", "O"], U=["a1","a2","a3","a4","a5"], D=(0,1), 
+                model=RanchModel(V=["A1", "A2", "A3", "A4", "A5", "O"]), 
+                u=(1,1,0,0,0), dag={"A1":[], "A2":[], "A3":[], "A4":[], "A5":[], "O":["A1", "A2", "A3", "A4", "A5"]})
+
+exp_ranch = [{'A1'}, {'A2', 'A3'}, {'A2', 'A4'}, {'A2', 'A5'}]
+
+class RanchModelExtended(BaseNumpyModel):
+    def simulate(self, u):
+        self["A1"] = u[0]
+        self["A2"] = u[1]
+        self["A3"] = u[2]
+        self["A4"] = u[3]
+        self["A5"] = u[4]
+        M1 = np.zeros(self.S.shape[0],dtype=int)
+        M1_active = self["A1"] == self["A2"]
+        M1[M1_active] = self["A1"][M1_active]
+        M1[~M1_active] = 2
+        self["M1"] = M1 
+        
+        M2 = np.zeros(self.S.shape[0],dtype=int)
+        stacked = np.stack([self["A2"],self["A3"], self["A4"], self["A5"]], axis=0)
+        M2_active = np.all(stacked == stacked[0, :], axis=0)
+        M2[M2_active] = self["A1"][M2_active]
+        M2[~M2_active] = 2
+        self["M2"] = M2 
+        
+        self["M3"] = ((self["A1"] + self["A2"] + self["A3"] + self["A4"] + self["A5"]) / 5) > .5
+
+        O = self["M3"].copy()
+        O[self["M2"] != 2] = self["M2"][self["M2"] != 2]
+        O[self["M1"] != 2] = self["M1"][self["M1"] != 2]
+        self["O"] = O
+
+scm_ranch_ext = SCM(V=["A1", "A2", "A3", "A4", "A5", "M1", "M2", "M3", "O"], U=["a1","a2","a3","a4","a5"], 
+                    D=[(0,1)]*5+[(0,1,2)]*3+[(0,1)], 
+                    model=RanchModelExtended(V=["A1", "A2", "A3", "A4", "A5", "M1", "M2", "M3","O"], dtype=int), 
+                    u=(1,1,0,0,0), dag={"A1":[], "A2":[], "A3":[], "A4":[], "A5":[],
+                                        "M1":["A1","A2"], "M2":["A1","A3", "A4", "A5"], 
+                                        "M3":["A1", "A2", "A3", "A4", "A5"], 
+                                        "O":["M1", "M2", "M3"]})
+
+exp_ranch_ext = [{'A1'}, {'A2'}, {'M1'}]
+
+# Voting
+class VoteModel(BaseNumpyModel):
+    def __init__(self, n, phi=None, psi=None, dtype=bool):
+        V = [f"A{i}" for i in range(1,n+1)] + ["O"]
+        super().__init__(V, phi=phi, psi=psi, dtype=dtype)
+        self.n=n
+        
+    def simulate(self, u):
+        m = 0
+        for i in range(1,self.n+1):
+            self[f"A{i}"] = u[i-1]
+            m += self[f"A{i}"]
+        self["O"] = (m / self.n) > .5
+
+n_voters = 5
+voters = [f"A{i}" for i in range(1,n_voters+1)]
+scm_vote = SCM(V=voters + ["O"], U=[f"a{i}" for i in range(1,n_voters+1)], D=(0,1), 
+                model=VoteModel(n_voters), 
+                u=(1,1,1,1,0,0), dag={f"A{i}":[] for i in range(1,n_voters+1)} | {"O":voters})
+
+exp_vote = [{'A2', 'A1'}, {'A1', 'A3'}, {'A1', 'A4'}, {'A2', 'A3'}, {'A2', 'A4'}, {'A4', 'A3'}]
+
+class Vote3WaysModel(BaseNumpyModel):
+    def __init__(self, n, phi=None, psi=None, dtype=bool):
+        V = [f"A{i}" for i in range(1,n+1)] + ["O"]
+        super().__init__(V, phi=phi, psi=psi, dtype=dtype)
+        self.n=n
+        
+    def simulate(self, u):
+        stack = np.stack([self[f"A{i}"] for i in range(1, self.n+1)], axis=0)
+        m = mode(stack, axis=0)[0]
+        self["O"] = m == 1
+
+n_voters = 5
+voters = [f"A{i}" for i in range(1,n_voters+1)]
+scm_vote_ext = SCM(V=voters + ["O"], U=[f"a{i}" for i in range(1,n_voters+1)], D=[(0,1,2)]*n_voters+[(0,1)], 
+                model=VoteModel(n_voters), 
+                u=(1,1,1,1,0,0), dag={f"A{i}":[] for i in range(1,n_voters+1)} | {"O":voters})
+
+exp_vote_ext = [{'A2', 'A1'}, {'A1', 'A3'}, {'A1', 'A4'}, {'A2', 'A3'}, {'A2', 'A4'}, {'A4', 'A3'}]
+
 
 """Examples from the ISI corectness proof"""
 class OrModel(BaseNumpyModel):
@@ -118,7 +332,7 @@ split_scm = SCM(V=split_vars,U=["x", "g", "y", "h"],u=(1,0,1,0), model=SplitMode
                 D=[(0,1), (0,1), (0,1), (0,1), ("x0","x1","g0","g1"),("y0","y1","h0","h1"),(0,1)],
                 dag={"X":[],"G":[],"Y":[],"H":[],"A":["X","G"],"B":["Y","H"],"T":["A","B"]})
 
-"""Steal Master Key"""
+"""SMK"""
 smk_base_vars_exo = "fs fn ff fdb a ad".split()
 smk_base_vars_users = "FS FN FF FDB A AD GP GK KMS DK SD".split()
 
@@ -152,7 +366,6 @@ class SMKModel(BaseNumpyModel):
         self["SD"] = elementwise_any([self[f"SD-U{i}"] for i in range(1,self.n+1)])
         self["SMK"] = self["DK"] | self["SD"]
         
-"""Base and noisy SMK"""
 def get_SMK_DAG(n:int):
     """
     Create the DAG for the SMK scenario with n attackers.

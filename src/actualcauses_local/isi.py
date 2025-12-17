@@ -79,6 +79,16 @@ def expand(C:set, e:dict, W:set, S:set, PA:dict[str:set[str]]) -> tuple[set, set
     R_W = W | (desc(I, PA) - I - (desc(C, PA) | C | anc(C, PA)))
     return I, W_0, R_C, r_C, R_W
 
+def check_memory(memory, K):
+    I, W_0, R_C, r_C, R_W = K
+    for I_ref, W_0_ref, R_C_ref, r_C_ref, R_W_ref in memory:
+        W_0 -= W_0_ref
+        R_C = {var for var in R_C if var not in R_C_ref or r_C[var] != r_C_ref[var]}
+        R_W -= R_W_ref
+        if I_ref >= I | W_0 | R_C | R_W:
+            # print(I_ref, W_0_ref, R_C_ref, r_C_ref, R_W_ref, ">=", K)
+            return False
+    return True
 
 def iterative_identification(v, D, simulation, V, dag, PA_T, cache_size=-1, **kargs):
     PA = dag
@@ -90,6 +100,7 @@ def iterative_identification(v, D, simulation, V, dag, PA_T, cache_size=-1, **ka
     queue = deque([K_0])
     cache = dict() if cache_size >= 0 else None
     actual_values = dict(zip(V,v))
+    memory = []
     ret = []
     Cs = []
     while queue:
@@ -117,9 +128,11 @@ def iterative_identification(v, D, simulation, V, dag, PA_T, cache_size=-1, **ka
             e = dict(e[0])
             for S in subsets(C):
                 K = expand(C,dict(e),W,S, PA)
-                if not len(K[0]): continue # no free variable for interventions
+                if not len(K[0]) or not check_memory(memory, K): 
+                    continue # no free variable for interventions or K already tested
                 if verbose: print(f"  {C=} -> {S=} -> {K=}")
                 queue.append(K)
+                memory.append(K)
         
         if verbose: print("==========")
     return ret

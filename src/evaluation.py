@@ -11,12 +11,6 @@ from actualcauses_local.mbs import beam_search, get_sets
 from actualcauses_local.isi import iterative_identification
 
 # === Evaluation token ===
-# def evaluate_smallest(causes, ref_causes):
-#     if not len(causes): return {"accuracy": 0}
-#     if not len(ref_causes): return {"accuracy": -1}
-#     min_pred = min(map(len,causes))
-#     min_ref = min(map(len,ref_causes))
-#     return {"accuracy": int(min_pred == min_ref)}
 
 def evaluate_smallest(causes, actual_values):
     if not len(causes): return {"accuracy": 0}
@@ -51,8 +45,8 @@ def evaluate_full(causes, ref_causes):
         "Accuracy": int(set(causes) == set(ref_causes)),
         "Recall": r,
         "Precision": p,
-        "jaccard": len(target & pred) / len(target | pred),
-        "dice": 2 * len(target & pred) / (len(target) + len(pred)),
+        "jaccard": len(target & pred) / len(target | pred) if len(target | pred) else 1,
+        "dice": 2 * len(target & pred) / (len(target) + len(pred)) if len(target) + len(pred) else 1,
         "F1": 2 * p * r / (p + r) if p+r else 0, 
         "Missed": n_missed / len(ref_causes) if ref_causes else 1,
         "% Overshoot": n_non_minimal / len(ref_causes) if ref_causes else 1,
@@ -76,53 +70,8 @@ def get_exact_causes(data):
             ref_causes[f"{context_repr}-{n_attacker}"] = {tuple(sorted(c)) for c in res["causes"]}
     return ref_causes
 
-# def build_ref_causes_bb(data):
-#     ref_causes = defaultdict(lambda: set())
-#     for datum in data:
-#         n_attacker = datum["n_attacker"]
-#         for res in datum["results"]:
-#             context_repr = int("".join(map(str,res["context"])), 2)
-#             E = res["rules"]
-#             scm = get_bbSMK_SCM(n_attacker, res["context"])
-#             actual_values = dict(zip(scm.V, scm.v))
-#             for e in E:
-#                 C, W = get_sets(e, actual_values)
-#                 R = tuple([(v,actual_values[v]) for v in W])
-#                 scm.find_causes(I=C, max_steps=-1, beam_size=-1, R=R)
-#                 min_Cs = set(scm.causes_hashable)
-#                 ref_causes[f"{context_repr}-{n_attacker}"] |= min_Cs
-#     return ref_causes
 
-# === General evaluations ===
-# def evaluate_SMK(exh, model, algo, beam_sizes, n_attackers, heuristics, lucb_label, max_steps, folder="results/"):
-#     file_name = get_file_name(exh, model, algo, heuristics, lucb_label)
-#     if not os.path.isfile(folder+file_name): 
-#         print(f"Could not evaluation file {file_name}")
-#         return 
-#     data = load_json(folder+file_name)
-#     if model == Models.BLACK_BOX:
-#         ref_causes = build_ref_causes_bb(data)
-#     else:
-#         if exh == Exhaustivness.SMALLEST:
-#             ref_data = load_json(folder+"base-smallest/ILP.json")
-#         else: 
-#             ref_data = load_json(folder+"base-exact/structured.json")
-#         ref_causes = get_exact_causes(ref_data)
-#     for datum in data:
-#         if datum["beam_size"] == -1: continue
-#         n = datum["n_attacker"]
-#         for res in datum["results"]:
-#             context_repr = int("".join(map(str,res["context"])), 2)
-#             ref = ref_causes[f"{context_repr}-{n}"]
-#             pred = {tuple(cause) for cause in res["causes"]}
-#             evaluator = evaluators[exh]
-#             measures = evaluator(pred, ref)
-#             res["metrics"] = measures
-    
-#     save_json(folder+file_name, data)
-
-
-def evaluate_SMK(exh, model, algo, beam_sizes, n_attackers, heuristics, lucb_label, max_steps, folder="results/"):
+def evaluate_SMK(exh, model, algo, beam_sizes, n_attackers, heuristics, lucb_label, folder="results/"):
     file_name = get_file_name(exh, model, algo, heuristics, lucb_label)
     if not os.path.isfile(folder+file_name): 
         print(f"Could not evaluation file {file_name}")
