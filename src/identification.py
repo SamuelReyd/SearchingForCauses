@@ -25,7 +25,7 @@ heuristics_refs = {
 
 # === General function ===
 def run_SMK(exh, model, algo, beam_sizes, n_attackers, heuristics, lucb_label, 
-            lucb_params, nl, n_seeds, folder="results/"):
+            max_steps, lucb_params, nl, n_seeds, folder="results/"):
     results = []
     file_name = get_file_name(exh, model, algo, heuristics, lucb_label)
     if os.path.isfile(folder+file_name): 
@@ -45,9 +45,9 @@ def run_SMK(exh, model, algo, beam_sizes, n_attackers, heuristics, lucb_label,
     save_json(folder+file_name, results)
     
 def run_one_SMK(contexts, exh, model, algo, bs, n, heuristic, lucb_label, 
-                lucb_params, nl, n_seeds, verbose=0):
+                max_steps, lucb_params, nl, n_seeds, verbose=0):
     
-    max_steps = -1 if exh == Exhaustivness.EXACT else 2 * n + 1
+    # max_steps = -1 if exh == Exhaustivness.EXACT else 2 * n + 1
     data = {
         "exhaustiveness": exh.value,
         "model": model.value,

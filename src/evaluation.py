@@ -71,7 +71,7 @@ def get_exact_causes(data):
     return ref_causes
 
 
-def evaluate_SMK(exh, model, algo, beam_sizes, n_attackers, heuristics, lucb_label, folder="results/"):
+def evaluate_SMK(exh, model, algo, beam_sizes, n_attackers, heuristics, lucb_label, max_steps, folder="results/"):
     file_name = get_file_name(exh, model, algo, heuristics, lucb_label)
     if not os.path.isfile(folder+file_name): 
         print(f"Could not evaluation file {file_name}")

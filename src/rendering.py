@@ -329,10 +329,10 @@ def plot_reg_x_per_z(df, zs, z_label, x_label, exh, algo, ax=None, y_label="n_ca
     if ax is None: ax = plt.gca()
     for i, z in enumerate(zs):
         index = (
-            (df.exh==exh) & (df.algo==algo) & (df[z_label]==z) & df.heuristic.isna()
+            (df.exh==exh) & (df.algo==algo) & (df[z_label]==z) & df.heuristic.isna() & (df.bs != -1)
         )
         
-        df_ = df[index].groupby([x_label]).mean([y_label])[[y_label]]
+        df_ = df[index].groupby([x_label])[[y_label]].mean()
         if not df_.index.size: continue
         X, Y = df_.index.array, df_[y_label].array
         fit, (r2, Y_pred, coefs) = find_model(X,Y)
