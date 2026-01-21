@@ -6,12 +6,12 @@
 env/*
 *.jpg
 *.pdf
-*.json
 *.csv
 *.xml
 *.png
 *.gif
 *.npy
 *.pkl
-results*
 gurobi.lic
+backbackup/
+backup/
