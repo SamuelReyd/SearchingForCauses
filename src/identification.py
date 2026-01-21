@@ -5,9 +5,6 @@ from itertools import product
 from collections import defaultdict
 
 from benchmark_models import SMKModel, get_SMK_SCM, get_SMK_V, get_mSMK_SCM, get_bbSMK_SCM, get_avg_nSMK_SCM, get_lucb_nSMK_SCM
-# from actualcauses import beam_search, iterative_identification
-from actualcauses_local.mbs import beam_search
-from actualcauses_local.isi import iterative_identification
 
 from ILP_why import ilp_SMK
 from general import *

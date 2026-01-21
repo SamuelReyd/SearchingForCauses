@@ -1,9 +1,7 @@
 import math, numpy as np
 from utils import generate_subsets, elementwise_any, elementwise_max
 from sympy import symbols, Equivalent, to_cnf, Or, And, Not
-from actualcauses_local.scm import SCM
-from actualcauses_local.lucb import lucb
-from actualcauses_local.system_model import *
+from actualcauses import SCM, lucb, BaseNumpyModel, AverageNumpyModel, LUCBNumpyModel
 from tqdm import tqdm
 from scipy.stats import mode
 from collections import defaultdict
