@@ -4,6 +4,6 @@ tqdm
 pandas 
 sympy 
 gurobipy
-actualcauses
+actualcauses==1.0.1
 ipykernel
 Jinja2

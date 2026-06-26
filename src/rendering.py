@@ -8,6 +8,7 @@ from sklearn.pipeline import make_pipeline
 from sklearn.metrics import r2_score
 
 from general import *
+from experiments import exps, exps_reg, AlgoTypes, Models
 
 w,h=3.1,2.1
 label_map = {"structured":"ISI", "bs":"b", "n":"n", "base_algo":"MBS", "ILP":"ILP"}
@@ -95,12 +96,16 @@ def plot_metric_mean(df, models, metrics, no_share=None, folder="figures/"):
                     if lucb_label:
                         index &= (df.lucb_label == lucb_label)
                     df_ = df[index].groupby(["bs"], as_index=True)[metric].mean()
-                    std = df[index].groupby(["bs"], as_index=True)[metric].std()/2
+                    # df_ = df[index].groupby(["bs"], as_index=True)[metric].median()
+                    std = df[index].groupby(["bs"], as_index=True)[metric].std()
+                    # up = df[index].groupby(["bs"], as_index=True)[metric].quantile(.75)
+                    # low = df[index].groupby(["bs"], as_index=True)[metric].quantile(.25)
                     x = np.arange(df_.index.size)
                     if algo == AlgoTypes.STRUCTURED.value: ls = "--"
                     else: ls = "-"
                     axes[i,j].errorbar(x, df_.array, yerr=std, marker="x",ls=ls, c=f"C{c}")
-                    axes[i,j].set_xticks(x,df_.index)
+                    # axes[i,j].errorbar(x, df_.array, yerr=[df_.array-low.array, up.array-df_.array], marker="x",ls=ls, c=f"C{c}")
+                    # axes[i,j].set_xticks(x,df_.index)
         axes[0,j].grid(axis="y")
         axes[1,j].grid(axis="y")
         axes[1,j].set_xlabel("Beam size")
@@ -119,6 +124,7 @@ def plot_metric_mean(df, models, metrics, no_share=None, folder="figures/"):
     
     for ax, metric in zip(axes.T[0], metrics): ax.set_ylabel(metric)
     plt.tight_layout()
+    # plt.savefig(folder+"-".join(metrics)+"-mean.pdf")
     plt.savefig(folder+"-".join(metrics)+"-mean.pdf")
     plt.show()
 
@@ -151,24 +157,36 @@ def plot_spaguetti(df, models, algo, metric):
 # == Tradeff figure ==
 def plot_tradeoff(df, exh, algo, n, quality_metric, ax=None):
     if ax is None: 
-        plt.figure(figsize=(w,h))
+        plt.figure(figsize=(w*1.2,h))
         ax = plt.gca()
     index = (
         (df.exh==exh) & (df.heuristic.isna()) & (df.algo == algo) & (df.model == "base") & (df.n == n)
     )
-    group = df[index].groupby(["bs"], dropna=False)
-    stds = group[[quality_metric,"time"]].std()
-    df_ = group.mean([quality_metric, "time"])
+    df[[quality_metric, "time"]] = df[[quality_metric, "time"]].apply(pd.to_numeric, errors='coerce')
+    group = df[index].groupby(["bs"], dropna=True)
+    stds = group[[quality_metric, "time"]].std()
+    # lows = group[[quality_metric, "time"]].quantile(.25)
+    # highs = group[[quality_metric, "time"]].quantile(.75)
+    df_ = group[[quality_metric, "time"]].mean()
+    # df_ = group[[quality_metric, "time"]].median()
     
-    t_std = stds.time / 2
-    q_std = stds[quality_metric] / 2
+    t_std = stds.time #/ 2
+    q_std = stds[quality_metric] #/ 2
+    # t_high = highs.time
+    # t_low = lows.time
+    # q_high = highs[quality_metric]
+    # q_low = lows[quality_metric]
     bs = df_.index.array
     t = df_.time.array
     q = df_[quality_metric].array
+    if quality_metric == "accuracy":
+        q_std = None
     ax.errorbar(t, q, xerr=t_std, yerr=q_std, ls='--',capsize=2, ecolor="grey")
+    # ax.errorbar(t, q, xerr=[t-t_low, t_high-t], yerr=[q-q_low, q_high-q], ls='--',capsize=2, ecolor="grey")
     for xi, yi, label in zip(t, q, bs):
         ax.text(xi, yi, label, fontsize=9, ha='right', va='bottom')
-    ax.set_ylim(min(q)-12, max(q) + .1*(max(q)-min(q)))
+    # ax.set_ylim(min(q)-12, max(q) + .1*(max(q)-min(q)))
+    ax.set_xlim(min(t)/2., max(t)*2.)
     ax.set_xlabel("time (s)")
     ax.set_ylabel(quality_metric)
     ax.set_xscale("log")
@@ -431,3 +449,26 @@ def locate_text_numbers(df):
     index = ((df.model=="non-boolean")&(df.n==10)&(df.bs==16)&(df.heuristic.isna())&(df.exh=="full"))
     df_ = df[index].groupby(["algo"]).n_calls.mean()
     print(f"non-boolean model, full, n=10, bs=16:     base->ISI: {(df_.loc['base_algo'] - df_.loc['structured'])/df_.loc['base_algo']:.0%} less calls")
+
+
+
+if __name__ == "__main__":
+    metrics = ["F1", "accuracy", "jaccard", "dice"]
+    df = get_values(exps, metrics, "results/")
+    df_ilp = get_values_ILP(["accuracy"], "results_reg/")
+    df_reg = get_values(exps_reg, ["accuracy"], folder="results_reg/")
+    df_reg = pd.concat([df_reg, df_ilp], ignore_index=True)
+    df.F1 *= 100
+    df.dice *= 100
+    df.accuracy *= 100
+    df_reg.accuracy *= 100
+
+    models = (
+    (Models.BASE.value, ""), 
+    # (Models.BLACK_BOX.value, ""), 
+    (Models.NON_BOOLEAN.value, ""), 
+    (Models.NOISY.value, "lucb"), 
+    (Models.NOISY.value, "naive"))
+
+    # plot_metric_mean(df, models, ["dice", "n_calls"], [1], "figures/")
+    plot_full_tradeoffs(pd.concat([df,df_reg]), "figures/")
