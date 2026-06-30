@@ -8,7 +8,6 @@ from general import Exhaustivness, Models, AlgoTypes
 from benchmark_models import get_bbSMK_SCM, get_SMK_SCM
 
 # === Evaluation token ===
-
 def evaluate_smallest(causes, actual_values):
     if not len(causes): return {"accuracy": 0}
     min_pred = min(map(len,causes))

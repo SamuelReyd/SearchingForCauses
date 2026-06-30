@@ -37,7 +37,7 @@ def run_SMK(exh, model, algo, beam_sizes, n_attackers, heuristics, lucb_label,
     for n, bs, heuristic in tqdm(list(product(n_attackers, beam_sizes, heuristics))):
         contexts = np.load(folder+f"contexts/n_attacker={n}.npy")
         data = run_one_SMK(contexts, exh, model, algo, bs, n, heuristic, lucb_label, 
-                           lucb_params, nl, n_seeds, verbose=0)
+                           max_steps, lucb_params, nl, n_seeds, verbose=0)
         results.append(data)
     save_json(folder+file_name, results)
     

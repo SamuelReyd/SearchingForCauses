@@ -31,6 +31,7 @@ lucb_params = {"a": .65,
 
 # Define experiments and parameters
 exps = (
+    # Exhaustivness, Model, AlgoType, beam_size, n_attackers, heuristics, stoch algo, max_steps
     # Exact results
     (Exhaustivness.EXACT, Models.BASE, AlgoTypes.STRUCTURED, [-1], n_attackers, [None], None, -1),
     # Full Base
@@ -50,6 +51,7 @@ exps = (
     )
 
 exps_reg = (
+    # Exhaustivness, Model, AlgoType, beam_size, n_attackers, heuristics, stoch algo, max_steps
     # Full reg
     (Exhaustivness.FULL, Models.BASE, AlgoTypes.BASE, beam_sizes, reg_attackers, [None], None, 7),
     (Exhaustivness.FULL, Models.BASE, AlgoTypes.STRUCTURED, beam_sizes, reg_attackers, [None], None, 7),
@@ -71,10 +73,10 @@ if __name__ == "__main__":
         
     # == Experiments for regressions ==
     # = ILP =
-    if not os.path.isfile(f"results_reg/base-smallest/ILP.json"):
-        print("Run ILP")
-        run_ILP_SMK(n_attackers_smallest)
-        evaluate_ILP()
+    # if not os.path.isfile(f"results_reg/base-smallest/ILP.json"):
+    #     print("Run ILP")
+    #     run_ILP_SMK(n_attackers_smallest)
+    #     evaluate_ILP()
     # = Ours =
     for exp in exps_reg:
         run_SMK(*exp, lucb_params, nl, n_seeds, folder="results_reg/")
