@@ -73,8 +73,12 @@ def evaluate_SMK(exh, model, algo, beam_sizes, n_attackers, heuristics, lucb_lab
         print(f"Could not evaluation file {file_name}")
         return
     data = load_json(folder+file_name)
-    ref_data = load_json(folder+"base-exact/structured.json")
-    ref_causes = get_exact_causes(ref_data)
+    if exh == Exhaustivness.FULL:
+        ref_data = load_json(folder+"base-exact/structured.json")
+        ref_causes = get_exact_causes(ref_data)
+    else:
+        ref_data = None
+        ref_causes = None
     for datum in data:
         if datum["beam_size"] == -1: continue
         n = datum["n_attacker"]

@@ -8,7 +8,7 @@ from sklearn.pipeline import make_pipeline
 from sklearn.metrics import r2_score
 
 from general import *
-from experiments import exps, exps_reg, AlgoTypes, Models
+from experiments import exps, exps_reg, exps_smallest, AlgoTypes, Models
 
 w,h=3.1,2.1
 label_map = {"structured":"ISI", "bs":"b", "n":"n", "base_algo":"MBS", "ILP":"ILP"}
@@ -239,7 +239,7 @@ def show_smallest_comparison(df, beam_sizes, ax=None):
             index &= (df.bs == bs)
             label += f"{bs}"
         ax.plot([],label=label, c=f"C{c}", marker="x")
-        df_ = df[index].groupby(["n"], as_index=False).mean(["time", "accuracy"])
+        df_ = df[index].groupby(["n"], as_index=False)[["time", "accuracy"]].mean()
         ns = df_.index.array
         for i in range(len(ns)-1):
             ni = ns[i]
@@ -455,20 +455,26 @@ def locate_text_numbers(df):
 if __name__ == "__main__":
     metrics = ["F1", "accuracy", "jaccard", "dice"]
     df = get_values(exps, metrics, "results/")
-    df_ilp = get_values_ILP(["accuracy"], "results_reg/")
+
     df_reg = get_values(exps_reg, ["accuracy"], folder="results_reg/")
-    df_reg = pd.concat([df_reg, df_ilp], ignore_index=True)
+
+    df_ilp = get_values_ILP(["accuracy"], "results_smallest/")
+    df_smallest = get_values(exps_smallest, ["accuracy"], folder="results_smallest/")
+    df_smallest = pd.concat([df_reg, df_ilp], ignore_index=True)
+
     df.F1 *= 100
     df.dice *= 100
     df.accuracy *= 100
     df_reg.accuracy *= 100
+    df_smallest.accuracy *= 100
 
-    models = (
-    (Models.BASE.value, ""), 
-    # (Models.BLACK_BOX.value, ""), 
-    (Models.NON_BOOLEAN.value, ""), 
-    (Models.NOISY.value, "lucb"), 
-    (Models.NOISY.value, "naive"))
+    # models = (
+    # (Models.BASE.value, ""), 
+    # # (Models.BLACK_BOX.value, ""), 
+    # (Models.NON_BOOLEAN.value, ""), 
+    # (Models.NOISY.value, "lucb"), 
+    # (Models.NOISY.value, "naive"))
 
     # plot_metric_mean(df, models, ["dice", "n_calls"], [1], "figures/")
-    plot_full_tradeoffs(pd.concat([df,df_reg]), "figures/")
+    # plot_full_tradeoffs(pd.concat([df,df_reg]), "figures/")
+    plot_smallest(df_smallest)

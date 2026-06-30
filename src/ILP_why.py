@@ -186,7 +186,7 @@ def add_vars_to_model(model, sp_vars, u, target):
 def ilp_why(endo_variables, u, target, G_cnf, prefix, verbose):
     with gp.Env(empty=True) as env:
         params = get_gerubi_options(prefix)
-        for param in ("LICENSEID",):
+        for param in ("LICENSEID","WLSACCESSID", "WLSSECRET"):
             env.setParam(param, params[param])
         env.setParam('OutputFlag', 0)
         env.setParam('LogToConsole', 0)
