@@ -239,7 +239,7 @@ exp_vote_ext = [{'A2', 'A1'}, {'A1', 'A3'}, {'A1', 'A4'}, {'A2', 'A3'}, {'A2', '
 
 
 """Examples from the ISI corectness proof"""
-class OrModel(BaseNumpyModel):
+class NotModel(BaseNumpyModel):
     def simulate(self, u):
         self["X"] = u[0]
         self["A"] = self["X"]
@@ -247,8 +247,8 @@ class OrModel(BaseNumpyModel):
         self["T"] = self["A"] | self["B"]
     
     
-or_scm = SCM(V=["X", "A", "B", "T"],U=["x"],u=[1],D=(0,1),
-             model=OrModel(["X", "A", "B", "T"]),
+not_scm = SCM(V=["X", "A", "B", "T"],U=["x"],u=[1],D=(0,1),
+             model=NotModel(["X", "A", "B", "T"]),
              dag={"X":[], "A":["X"], "B":["A"], "T":["A", "B"]})
 
 class XORModel(BaseNumpyModel):
@@ -329,6 +329,19 @@ class SplitModel(BaseNumpyModel):
 split_scm = SCM(V=split_vars,U=["x", "g", "y", "h"],u=(1,0,1,0), model=SplitModel(),
                 D=[(0,1), (0,1), (0,1), (0,1), ("x0","x1","g0","g1"),("y0","y1","h0","h1"),(0,1)],
                 dag={"X":[],"G":[],"Y":[],"H":[],"A":["X","G"],"B":["Y","H"],"T":["A","B"]})
+
+
+class ORModel(BaseNumpyModel):
+    def simulate(self, u):
+        self["X"] = u[0]
+        self["Y"] = u[1]
+        self["A"] = self["X"]
+        self["B"] = self["Y"]
+        self["T"] = self["A"] | self["B"]
+    
+or_scm = SCM(V=["X", "Y", "A", "B", "T"],U=["x", "y"],u=[1, 1],D=(0,1),
+               model=ORModel(["X", "Y", "A", "B", "T"]),
+               dag={"X":[], "Y": [], "A":["X"], "B":["Y"], "T":["A", "B"]})
 
 """SMK"""
 smk_base_vars_exo = "fs fn ff fdb a ad".split()

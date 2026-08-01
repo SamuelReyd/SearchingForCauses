@@ -8,6 +8,7 @@ from sklearn.pipeline import make_pipeline
 from sklearn.metrics import r2_score
 
 from general import *
+from sanity import *
 from experiments import exps, exps_reg, exps_smallest, AlgoTypes, Models
 
 w,h=3.1,2.1
@@ -165,26 +166,33 @@ def plot_tradeoff(df, exh, algo, n, quality_metric, ax=None):
     df[[quality_metric, "time"]] = df[[quality_metric, "time"]].apply(pd.to_numeric, errors='coerce')
     group = df[index].groupby(["bs"], dropna=True)
     stds = group[[quality_metric, "time"]].std()
-    # lows = group[[quality_metric, "time"]].quantile(.25)
-    # highs = group[[quality_metric, "time"]].quantile(.75)
-    df_ = group[[quality_metric, "time"]].mean()
-    # df_ = group[[quality_metric, "time"]].median()
+    lows = group[[quality_metric, "time"]].quantile(.25)
+    highs = group[[quality_metric, "time"]].quantile(.75)
+    df_mean = group[[quality_metric, "time"]].mean()
+    df_median = group[[quality_metric, "time"]].median()
     
     t_std = stds.time #/ 2
     q_std = stds[quality_metric] #/ 2
-    # t_high = highs.time
-    # t_low = lows.time
-    # q_high = highs[quality_metric]
-    # q_low = lows[quality_metric]
+    t_high = highs.time
+    t_low = lows.time
+    q_high = highs[quality_metric]
+    q_low = lows[quality_metric]
+    if quality_metric == "accuracy":
+        df_ = df_mean
+    else:
+        df_ = df_median
     bs = df_.index.array
     t = df_.time.array
     q = df_[quality_metric].array
     if quality_metric == "accuracy":
-        q_std = None
-    ax.errorbar(t, q, xerr=t_std, yerr=q_std, ls='--',capsize=2, ecolor="grey")
-    # ax.errorbar(t, q, xerr=[t-t_low, t_high-t], yerr=[q-q_low, q_high-q], ls='--',capsize=2, ecolor="grey")
+        ax.errorbar(t, q, xerr=t_std, ls='--',capsize=2, ecolor="grey")
+    else:
+        ax.errorbar(t, q, xerr=[t-t_low, t_high-t], yerr=[q-q_low, q_high-q], ls='--',capsize=2, ecolor="grey")
     for xi, yi, label in zip(t, q, bs):
-        ax.text(xi, yi, label, fontsize=9, ha='right', va='bottom')
+        if label in (2, 4, 8):
+            ax.text(xi, yi, label, fontsize=8, ha='right', va='bottom')
+        else:
+            ax.text(xi, yi, label, fontsize=8, ha='left', va='top')
     # ax.set_ylim(min(q)-12, max(q) + .1*(max(q)-min(q)))
     ax.set_xlim(min(t)/2., max(t)*2.)
     ax.set_xlabel("time (s)")
@@ -470,7 +478,6 @@ if __name__ == "__main__":
 
     # models = (
     # (Models.BASE.value, ""), 
-    # # (Models.BLACK_BOX.value, ""), 
     # (Models.NON_BOOLEAN.value, ""), 
     # (Models.NOISY.value, "lucb"), 
     # (Models.NOISY.value, "naive"))
@@ -478,3 +485,8 @@ if __name__ == "__main__":
     # plot_metric_mean(df, models, ["dice", "n_calls"], [1], "figures/")
     # plot_full_tradeoffs(pd.concat([df,df_reg]), "figures/")
     plot_smallest(df_smallest)
+
+    """Sanity"""
+    # print("Sanity checks")
+    # lines, index = run_sanity_checks(sanity_checks)
+    # plot_sanity_checks(lines, index)

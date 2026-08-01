@@ -21,11 +21,11 @@ def evaluate_full(causes, ref_causes):
     avg_overshot = 0
     for ref_cause in ref_causes:
         for cause in causes:
-            if set(ref_cause) < set(cause):
+            if ref_cause < cause:
                 n_non_minimal += 1
                 avg_overshot += len(cause) - len(ref_cause)
                 break
-            if set(ref_cause) == set(cause):
+            if ref_cause == cause:
                 n_minimal += 1
                 break
         else:
@@ -38,7 +38,7 @@ def evaluate_full(causes, ref_causes):
     pred = {tuple(sorted(cause)) for cause in causes}
     
     return {
-        "Accuracy": int(set(causes) == set(ref_causes)),
+        "Accuracy": int(causes == ref_causes),
         "Recall": r,
         "Precision": p,
         "jaccard": len(target & pred) / len(target | pred) if len(target | pred) else 1,
@@ -66,6 +66,40 @@ def get_exact_causes(data):
             ref_causes[f"{context_repr}-{n_attacker}"] = {tuple(sorted(c)) for c in res["causes"]}
     return ref_causes
 
+def get_ks(u, is_v=False):
+    if not is_v:
+        n = len(u) // 6
+        scm = get_SMK_SCM(n, v)
+        v = scm.v
+    else:
+        n = (len(v) - 3) // 11
+        v = u
+
+    V = get_SMK_V(n)
+    k1 = None
+    k2 = None
+    for label, value in zip(V, v):
+        if "DK" in label and label != "DK" and value == 1:
+            k1 = int(label.split("-")[1][1:])
+        if "SD" in label and label != "SD" and value == 1:
+            k2 = int(label.split("-")[1][1:])
+    return k1, k2
+
+def smk_causes(u, is_v=False):
+    k1, k2 = get_ks(u, is_v)
+
+    dk_causes = [
+        {"DK"},{f"DK-U{k1}"},{f"GP-U{k1}"},{f"GK-U{k1}"},{f"FS-U{k1}", f"FN-U{k1}"},{f"FF-U{k1}", f"FDB-U{k1}"}
+    ] if k1 is not None else []
+
+    sd_causes = [
+        {"SD"},{f"SD-U{k2}"},{f"KMS-U{k2}"},{f"A-U{k2}"},{f"AD-U{k2}"},
+    ] if k2 is not None else []
+
+    if k1 is not None and k2 is not None:
+        return [set(d | s) for d in dk_causes for s in sd_causes]
+    return set(dk_causes or sd_causes)
+
 
 def evaluate_SMK(exh, model, algo, beam_sizes, n_attackers, heuristics, lucb_label, max_steps, folder="results/"):
     file_name = get_file_name(exh, model, algo, heuristics, lucb_label)
@@ -73,25 +107,27 @@ def evaluate_SMK(exh, model, algo, beam_sizes, n_attackers, heuristics, lucb_lab
         print(f"Could not evaluation file {file_name}")
         return
     data = load_json(folder+file_name)
-    if exh == Exhaustivness.FULL:
-        ref_data = load_json(folder+"base-exact/structured.json")
-        ref_causes = get_exact_causes(ref_data)
-    else:
-        ref_data = None
-        ref_causes = None
+    # if exh == Exhaustivness.FULL:
+    #     ref_data = load_json(folder+"base-exact/structured.json")
+    #     ref_causes = get_exact_causes(ref_data)
+    # else:
+    #     ref_data = None
+    #     ref_causes = None
     for datum in data:
-        if datum["beam_size"] == -1: continue
+        # if datum["beam_size"] == -1: continue
         n = datum["n_attacker"]
-        if datum["beam_size"] == -1: continue
+        # if datum["beam_size"] == -1: continue
         for res in datum["results"]:
-            pred = {tuple(cause) for cause in res["causes"]}
+            # pred = {tuple(cause) for cause in res["causes"]}
             if exh == Exhaustivness.SMALLEST:
                 scm = get_SMK_SCM(n, res["context"])
-                measures = evaluate_smallest(pred, dict(zip(scm.V,scm.v)))
+                # measures = evaluate_smallest(pred, dict(zip(scm.V,scm.v)))
+                measures = evaluate_smallest(res["causes"], dict(zip(scm.V,scm.v)))
             else:
-                context_repr = int("".join(map(str,res["context"])), 2)
-                ref = ref_causes[f"{context_repr}-{n}"]
-                measures = evaluate_full(pred, ref)
+                # context_repr = int("".join(map(str,res["context"])), 2)
+                # ref = ref_causes[f"{context_repr}-{n}"]
+                # measures = evaluate_full(pred, ref)
+                measures = evaluate_full(res["causes"], smk_causes(res["context"]))
             res["metrics"] = measures
     
     save_json(folder+file_name, data)

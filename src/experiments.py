@@ -70,7 +70,7 @@ exps_smallest = (
 
 # Main
 if __name__ == "__main__":
-    pass
+    # pass
     # == Contexts == 
     # make_base_contexts(N, reg_attackers + n_attackers)
     # shutil.copytree("results/contexts", "results_reg/", dirs_exist_ok=True)
@@ -89,10 +89,10 @@ if __name__ == "__main__":
     #     print("Run ILP")
     #     run_ILP_SMK(smallest_attackers, "results_smallest/")
     #     evaluate_ILP(folder="results_smallest/")
-    # # = Ours =
-    # for exp in exp_smallest:
-    #     run_SMK(*exp, lucb_params=lucb_params, nl=nl, n_seeds=n_seeds, folder="results_smallest/")
-    #     evaluate_SMK(*exp, folder="results_smallest/")
+    # = Ours =
+    for exp in exps_smallest:
+        run_SMK(*exp, lucb_params=lucb_params, nl=nl, n_seeds=n_seeds, folder="results_smallest/")
+        evaluate_SMK(*exp, folder="results_smallest/")
 
     # == Experiments for regressions
     # for exp in exps_reg:
