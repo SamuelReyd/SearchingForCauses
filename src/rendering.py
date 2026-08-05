@@ -76,7 +76,7 @@ def get_values_ILP(metrics, folder):
     return pd.DataFrame(table, columns=columns)
 
 # == Main figure ==
-def plot_metric_mean(df, models, metrics, no_share=None, folder="figures/"):
+def plot_general(df, models, metrics, no_share=None, agg="median", folder="figures/"):
     rows, cols = len(metrics),len(models)
     _, axes = plt.subplots(rows, cols, figsize=(w*cols,h*rows), sharex=True)
     
@@ -96,17 +96,19 @@ def plot_metric_mean(df, models, metrics, no_share=None, folder="figures/"):
                     index = (df.algo == algo) & (df.model==model) & (df.n == n) & df.heuristic.isna()
                     if lucb_label:
                         index &= (df.lucb_label == lucb_label)
-                    df_ = df[index].groupby(["bs"], as_index=True)[metric].mean()
-                    # df_ = df[index].groupby(["bs"], as_index=True)[metric].median()
-                    std = df[index].groupby(["bs"], as_index=True)[metric].std()
-                    # up = df[index].groupby(["bs"], as_index=True)[metric].quantile(.75)
-                    # low = df[index].groupby(["bs"], as_index=True)[metric].quantile(.25)
+                    if agg == "median":
+                        df_ = df[index].groupby(["bs"], as_index=True)[metric].median()
+                        up = df[index].groupby(["bs"], as_index=True)[metric].quantile(.75)
+                        low = df[index].groupby(["bs"], as_index=True)[metric].quantile(.25)
+                        dev = [df_.array-low.array, up.array-df_.array]
+                    else:
+                        df_ = df[index].groupby(["bs"], as_index=True)[metric].mean()
+                        dev = df[index].groupby(["bs"], as_index=True)[metric].std()
+                    
                     x = np.arange(df_.index.size)
                     if algo == AlgoTypes.STRUCTURED.value: ls = "--"
                     else: ls = "-"
-                    axes[i,j].errorbar(x, df_.array, yerr=std, marker="x",ls=ls, c=f"C{c}")
-                    # axes[i,j].errorbar(x, df_.array, yerr=[df_.array-low.array, up.array-df_.array], marker="x",ls=ls, c=f"C{c}")
-                    # axes[i,j].set_xticks(x,df_.index)
+                    axes[i,j].errorbar(x, df_.array, yerr=dev, marker="x",ls=ls, c=f"C{c}")
         axes[0,j].grid(axis="y")
         axes[1,j].grid(axis="y")
         axes[1,j].set_xlabel("Beam size")
@@ -126,7 +128,7 @@ def plot_metric_mean(df, models, metrics, no_share=None, folder="figures/"):
     for ax, metric in zip(axes.T[0], metrics): ax.set_ylabel(metric)
     plt.tight_layout()
     # plt.savefig(folder+"-".join(metrics)+"-mean.pdf")
-    plt.savefig(folder+"-".join(metrics)+"-mean.pdf")
+    plt.savefig(folder+"-".join(metrics)+f"-{agg}.pdf")
     plt.show()
 
 # == Spaghetti plot ==
@@ -476,17 +478,39 @@ if __name__ == "__main__":
     df_reg.accuracy *= 100
     df_smallest.accuracy *= 100
 
-    # models = (
-    # (Models.BASE.value, ""), 
-    # (Models.NON_BOOLEAN.value, ""), 
-    # (Models.NOISY.value, "lucb"), 
-    # (Models.NOISY.value, "naive"))
+    models = (
+    (Models.BASE.value, ""), 
+    (Models.NON_BOOLEAN.value, ""), 
+    (Models.NOISY.value, "lucb"), 
+    (Models.NOISY.value, "naive"))
 
-    # plot_metric_mean(df, models, ["dice", "n_calls"], [1], "figures/")
+    plot_general(df, models, ["dice", "n_calls"], [1], "median", "figures/")
     # plot_full_tradeoffs(pd.concat([df,df_reg]), "figures/")
-    plot_smallest(df_smallest)
+    # plot_smallest(df_smallest)
+    # plot_all_regressions(df_reg)
+    # plot_heuristic(df)
 
-    """Sanity"""
+
+    # """Sanity"""
     # print("Sanity checks")
     # lines, index = run_sanity_checks(sanity_checks)
     # plot_sanity_checks(lines, index)
+
+    # """Comparison"""
+    # # Compare ISI/MBS on n_calls
+    # print(compare_algo(df, "ISI", "n_calls", "call_gain_ISI", "tables/"))
+    # # Compare ISI/MBS on dice
+    # print(compare_algo(df, "ISI", "dice", "dice_gain_ISI", "tables/"))
+    # # Compare Naive/LUCB on n_calls
+    # print(compare_algo(df, "lucb", "n_calls", "call_gain_LUCB", "tables/"))
+    # # Compare Naive/LUCB on dice
+    # print(compare_algo(df, "lucb", "dice", "dice_gain_LUCB", "tables/"))
+    # # Test
+    # locate_text_numbers(df)
+
+    # """Exact identification"""
+    # print("Mean time (s) and number of calls for the exact identification")
+    # print(df[df.exh == "exact"].groupby("n")[["time","n_calls"]].mean())
+
+    # print("Std time (s) and number of calls for the exact identification")
+    # print(df[df.exh == "exact"].groupby("n")[["time","n_calls"]].std())

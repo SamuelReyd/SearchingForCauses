@@ -72,28 +72,28 @@ exps_smallest = (
 if __name__ == "__main__":
     # pass
     # == Contexts == 
-    # make_base_contexts(N, reg_attackers + n_attackers)
-    # shutil.copytree("results/contexts", "results_reg/", dirs_exist_ok=True)
+    make_base_contexts(N, reg_attackers + n_attackers)
+    shutil.copytree("results/contexts", "results_reg/contexts", dirs_exist_ok=True)
     
     # == Experiments ==
-    # for exp in exps:
-    #     run_SMK(*exp, lucb_params, nl, n_seeds)
-    #     evaluate_SMK(*exp)
+    for exp in exps:
+        run_SMK(*exp, lucb_params, nl, n_seeds)
+        evaluate_SMK(*exp)
         
     # == Experiments for regressions ==
-    # # = ILP =
-    # # Make contexts for the smallest cause evaluation
-    # make_base_contexts(N, smallest_attackers, "results_smallest/")
+    # = ILP =
+    # Make contexts for the smallest cause evaluation
+    make_base_contexts(N, smallest_attackers, "results_smallest/")
     
-    # if not os.path.isfile(f"results_smallest/base-smallest/ILP.json"):
-    #     print("Run ILP")
-    #     run_ILP_SMK(smallest_attackers, "results_smallest/")
-    #     evaluate_ILP(folder="results_smallest/")
+    if not os.path.isfile(f"results_smallest/base-smallest/ILP.json"):
+        print("Run ILP")
+        run_ILP_SMK(smallest_attackers, "results_smallest/")
+        evaluate_ILP(folder="results_smallest/")
     # = Ours =
     for exp in exps_smallest:
         run_SMK(*exp, lucb_params=lucb_params, nl=nl, n_seeds=n_seeds, folder="results_smallest/")
         evaluate_SMK(*exp, folder="results_smallest/")
 
     # == Experiments for regressions
-    # for exp in exps_reg:
-    #     run_SMK(*exp, lucb_params, nl, n_seeds, folder="results_reg/")
+    for exp in exps_reg:
+        run_SMK(*exp, lucb_params, nl, n_seeds, folder="results_reg/")

@@ -69,7 +69,7 @@ def get_exact_causes(data):
 def get_ks(u, is_v=False):
     if not is_v:
         n = len(u) // 6
-        scm = get_SMK_SCM(n, v)
+        scm = get_SMK_SCM(n, u)
         v = scm.v
     else:
         n = (len(v) - 3) // 11
@@ -83,22 +83,26 @@ def get_ks(u, is_v=False):
             k1 = int(label.split("-")[1][1:])
         if "SD" in label and label != "SD" and value == 1:
             k2 = int(label.split("-")[1][1:])
-    return k1, k2
+    return k1, k2, dict(zip(V,v))
 
 def smk_causes(u, is_v=False):
-    k1, k2 = get_ks(u, is_v)
+    k1, k2, v = get_ks(u, is_v)
 
-    dk_causes = [
-        {"DK"},{f"DK-U{k1}"},{f"GP-U{k1}"},{f"GK-U{k1}"},{f"FS-U{k1}", f"FN-U{k1}"},{f"FF-U{k1}", f"FDB-U{k1}"}
-    ] if k1 is not None else []
+    if k1:
+        dk_causes = [{"DK"},{f"DK-U{k1}"},{f"GP-U{k1}"},{f"GK-U{k1}"}]
+        dk_causes.append({variable for variable in (f"FS-U{k1}", f"FN-U{k1}") if v[variable]})
+        dk_causes.append({variable for variable in (f"FF-U{k1}", f"FDB-U{k1}") if v[variable]})
+    else:
+        dk_causes = []
 
     sd_causes = [
         {"SD"},{f"SD-U{k2}"},{f"KMS-U{k2}"},{f"A-U{k2}"},{f"AD-U{k2}"},
     ] if k2 is not None else []
 
     if k1 is not None and k2 is not None:
-        return [set(d | s) for d in dk_causes for s in sd_causes]
-    return set(dk_causes or sd_causes)
+        return [d | s for d in dk_causes for s in sd_causes]
+
+    return dk_causes or sd_causes
 
 
 def evaluate_SMK(exh, model, algo, beam_sizes, n_attackers, heuristics, lucb_label, max_steps, folder="results/"):
@@ -122,12 +126,12 @@ def evaluate_SMK(exh, model, algo, beam_sizes, n_attackers, heuristics, lucb_lab
             if exh == Exhaustivness.SMALLEST:
                 scm = get_SMK_SCM(n, res["context"])
                 # measures = evaluate_smallest(pred, dict(zip(scm.V,scm.v)))
-                measures = evaluate_smallest(res["causes"], dict(zip(scm.V,scm.v)))
+                measures = evaluate_smallest(list(map(set,res["causes"])), dict(zip(scm.V,scm.v)))
             else:
                 # context_repr = int("".join(map(str,res["context"])), 2)
                 # ref = ref_causes[f"{context_repr}-{n}"]
                 # measures = evaluate_full(pred, ref)
-                measures = evaluate_full(res["causes"], smk_causes(res["context"]))
+                measures = evaluate_full(list(map(set,res["causes"])), smk_causes(res["context"]))
             res["metrics"] = measures
     
     save_json(folder+file_name, data)

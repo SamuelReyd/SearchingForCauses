@@ -166,22 +166,30 @@ class RanchModelExtended(BaseNumpyModel):
         self["A3"] = u[2]
         self["A4"] = u[3]
         self["A5"] = u[4]
+
+        # Check if M1 applies
         M1 = np.zeros(self.S.shape[0],dtype=int)
         M1_active = self["A1"] == self["A2"]
+        # M1 take value 0 or 1 when it applies and 2 when it does not apply
         M1[M1_active] = self["A1"][M1_active]
         M1[~M1_active] = 2
         self["M1"] = M1 
-        
+
+        # Check where M2 applies
         M2 = np.zeros(self.S.shape[0],dtype=int)
         stacked = np.stack([self["A2"],self["A3"], self["A4"], self["A5"]], axis=0)
         M2_active = np.all(stacked == stacked[0, :], axis=0)
+        # Set M2 values
         M2[M2_active] = self["A1"][M2_active]
         M2[~M2_active] = 2
         self["M2"] = M2 
-        
+
+        # M3 always apply when the other do not
         self["M3"] = ((self["A1"] + self["A2"] + self["A3"] + self["A4"] + self["A5"]) / 5) > .5
 
+        # Use the value of M3
         O = self["M3"].copy()
+        # Overight where M2 or M1 apply
         O[self["M2"] != 2] = self["M2"][self["M2"] != 2]
         O[self["M1"] != 2] = self["M1"][self["M1"] != 2]
         self["O"] = O
@@ -190,7 +198,7 @@ scm_ranch_ext = SCM(V=["A1", "A2", "A3", "A4", "A5", "M1", "M2", "M3", "O"], U=[
                     D=[(0,1)]*5+[(0,1,2)]*3+[(0,1)], 
                     model=RanchModelExtended(V=["A1", "A2", "A3", "A4", "A5", "M1", "M2", "M3","O"], dtype=int), 
                     u=(1,1,0,0,0), dag={"A1":[], "A2":[], "A3":[], "A4":[], "A5":[],
-                                        "M1":["A1","A2"], "M2":["A1","A3", "A4", "A5"], 
+                                        "M1":["A1","A2"], "M2":["A1","A2", "A3", "A4", "A5"], 
                                         "M3":["A1", "A2", "A3", "A4", "A5"], 
                                         "O":["M1", "M2", "M3"]})
 

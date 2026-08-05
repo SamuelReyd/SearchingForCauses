@@ -104,6 +104,8 @@ def run_ILP_SMK(n_attackers, folder=""):
     exh = Exhaustivness.SMALLEST
     results = []
     prefix = "../" * folder.startswith("../")
+    if os.path.exists(folder+f"{model.value}-{exh.value}/ILP.json"):
+        return
     for n in n_attackers:
         contexts = np.load(folder+f"contexts/n_attacker={n}.npy")
         variables = get_SMK_V(n)[:-1]

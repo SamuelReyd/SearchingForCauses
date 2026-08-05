@@ -12,6 +12,7 @@ env/*
 *.gif
 *.npy
 *.pkl
+*.txt
 gurobi.lic
 backbackup/
 backup/

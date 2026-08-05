@@ -27,14 +27,14 @@ def run_sanity_checks(sanity_checks, verbose=True):
     for label, model, exp_causes in sanity_checks:
         index.append([label, str(exp_causes).replace("{", r"\{").replace("}",r"\}")])
         exp_causes = [tuple(cause) for cause in exp_causes]
-        model.find_causes(ISI=True)
+        model.find_causes(ISI=True, exhaustive=True, minimal_only=False)
         if verbose: 
             print(label, ":", model.causes)
     
         calls = [model.n_calls]
         times = [f"{model.identification_time*1000:.2f}"]
         out = [model.causes_hashable]
-        model.find_causes(ISI=False, beam_size=-1, early_stop=False, max_steps=-1)
+        model.find_causes(ISI=False, beam_size=-1, max_steps=-1)
         calls += [model.n_calls]
         times += [f"{model.identification_time*1000:.2f}"]
         out += [model.causes_hashable]
@@ -45,18 +45,18 @@ def run_sanity_checks(sanity_checks, verbose=True):
 
 def plot_sanity_checks(lines, index, show_pd = False):
     columns=pd.MultiIndex.from_tuples([
-        ('n_calls', "MBS"),
         ('n_calls', "ISI"),
-        ('t (ms)', "MBS"),
+        ('n_calls', "MBS"),
         ('t (ms)', "ISI"),
-        ('correct?', "MBS"),
+        ('t (ms)', "MBS"),
         ('correct?', "ISI"),
+        ('correct?', "MBS"),
     ])
     df = pd.DataFrame(lines, columns=columns, index=pd.MultiIndex.from_tuples(index, names=["Model","Expected causes"]))
 
     if show_pd:
-        df[('correct?', "MBS")] = df[('correct?', "MBS")].apply(lambda x: "V" if x == "{\color{green}\checkmark}" else "X")
-        df[('correct?', "ISI")] = df[('correct?', "ISI")].apply(lambda x: "V" if x == "{\color{green}\checkmark}" else "X")
+        df[('correct?', "MBS")] = df[('correct?', "MBS")].apply(lambda x: "V" if x == r"{\color{green}\checkmark}" else "X")
+        df[('correct?', "ISI")] = df[('correct?', "ISI")].apply(lambda x: "V" if x == r"{\color{green}\checkmark}" else "X")
         print(df)
     else:
         print(df.to_latex().replace("_", r"\_").replace("'", ""))

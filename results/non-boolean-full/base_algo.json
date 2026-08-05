@@ -80,7 +80,7 @@
         "seed": null,
         "lucb_info": null,
         "metrics": {
-          "Accuracy": 1,
+          "Accuracy": 0,
           "Recall": 1.0,
           "Precision": 1.0,
           "jaccard": 1.0,
@@ -479,7 +479,7 @@
         "seed": null,
         "lucb_info": null,
         "metrics": {
-          "Accuracy": 1,
+          "Accuracy": 0,
           "Recall": 1.0,
           "Precision": 1.0,
           "jaccard": 1.0,
@@ -879,7 +879,7 @@
         "seed": null,
         "lucb_info": null,
         "metrics": {
-          "Accuracy": 1,
+          "Accuracy": 0,
           "Recall": 1.0,
           "Precision": 1.0,
           "jaccard": 1.0,
@@ -1207,7 +1207,7 @@
         "seed": null,
         "lucb_info": null,
         "metrics": {
-          "Accuracy": 1,
+          "Accuracy": 0,
           "Recall": 1.0,
           "Precision": 1.0,
           "jaccard": 1.0,
@@ -1725,7 +1725,7 @@
         "seed": null,
         "lucb_info": null,
         "metrics": {
-          "Accuracy": 1,
+          "Accuracy": 0,
           "Recall": 1.0,
           "Precision": 1.0,
           "jaccard": 1.0,
@@ -2562,7 +2562,7 @@
         "seed": null,
         "lucb_info": null,
         "metrics": {
-          "Accuracy": 1,
+          "Accuracy": 0,
           "Recall": 1.0,
           "Precision": 1.0,
           "jaccard": 1.0,
@@ -2945,7 +2945,7 @@
         "seed": null,
         "lucb_info": null,
         "metrics": {
-          "Accuracy": 1,
+          "Accuracy": 0,
           "Recall": 1.0,
           "Precision": 1.0,
           "jaccard": 1.0,
@@ -3040,7 +3040,7 @@
         "seed": null,
         "lucb_info": null,
         "metrics": {
-          "Accuracy": 1,
+          "Accuracy": 0,
           "Recall": 1.0,
           "Precision": 1.0,
           "jaccard": 1.0,
@@ -3135,7 +3135,7 @@
         "seed": null,
         "lucb_info": null,
         "metrics": {
-          "Accuracy": 1,
+          "Accuracy": 0,
           "Recall": 1.0,
           "Precision": 1.0,
           "jaccard": 1.0,
@@ -3362,7 +3362,7 @@
         "seed": null,
         "lucb_info": null,
         "metrics": {
-          "Accuracy": 1,
+          "Accuracy": 0,
           "Recall": 1.0,
           "Precision": 1.0,
           "jaccard": 1.0,
@@ -3457,7 +3457,7 @@
         "seed": null,
         "lucb_info": null,
         "metrics": {
-          "Accuracy": 1,
+          "Accuracy": 0,
           "Recall": 1.0,
           "Precision": 1.0,
           "jaccard": 1.0,
@@ -3722,7 +3722,7 @@
           "F1": 0.3333333333333333,
           "Missed": 0.0,
           "% Overshoot": 0.5,
-          "Average Overshoot": 2.6666666666666665,
+          "Average Overshoot": 2.0,
           "Average Repeat": 3.0
         }
       },
@@ -3809,7 +3809,7 @@
         "seed": null,
         "lucb_info": null,
         "metrics": {
-          "Accuracy": 1,
+          "Accuracy": 0,
           "Recall": 1.0,
           "Precision": 1.0,
           "jaccard": 1.0,
@@ -3904,7 +3904,7 @@
         "seed": null,
         "lucb_info": null,
         "metrics": {
-          "Accuracy": 1,
+          "Accuracy": 0,
           "Recall": 1.0,
           "Precision": 1.0,
           "jaccard": 1.0,
@@ -4380,7 +4380,7 @@
           "F1": 0.4,
           "Missed": 0.0,
           "% Overshoot": 0.5,
-          "Average Overshoot": 1.6666666666666667,
+          "Average Overshoot": 1.0,
           "Average Repeat": 2.0
         }
       },
@@ -4622,7 +4622,7 @@
         "seed": null,
         "lucb_info": null,
         "metrics": {
-          "Accuracy": 1,
+          "Accuracy": 0,
           "Recall": 1.0,
           "Precision": 1.0,
           "jaccard": 1.0,
@@ -5350,7 +5350,7 @@
           "F1": 0.4,
           "Missed": 0.0,
           "% Overshoot": 0.5,
-          "Average Overshoot": 1.3333333333333333,
+          "Average Overshoot": 1.0,
           "Average Repeat": 2.0
         }
       },
@@ -5862,7 +5862,7 @@
         "seed": null,
         "lucb_info": null,
         "metrics": {
-          "Accuracy": 1,
+          "Accuracy": 0,
           "Recall": 1.0,
           "Precision": 1.0,
           "jaccard": 1.0,
@@ -6385,7 +6385,7 @@
         "seed": null,
         "lucb_info": null,
         "metrics": {
-          "Accuracy": 1,
+          "Accuracy": 0,
           "Recall": 1.0,
           "Precision": 1.0,
           "jaccard": 1.0,
@@ -6480,7 +6480,7 @@
         "seed": null,
         "lucb_info": null,
         "metrics": {
-          "Accuracy": 1,
+          "Accuracy": 0,
           "Recall": 1.0,
           "Precision": 1.0,
           "jaccard": 1.0,
@@ -6575,7 +6575,7 @@
         "seed": null,
         "lucb_info": null,
         "metrics": {
-          "Accuracy": 1,
+          "Accuracy": 0,
           "Recall": 1.0,
           "Precision": 1.0,
           "jaccard": 1.0,
@@ -6802,7 +6802,7 @@
         "seed": null,
         "lucb_info": null,
         "metrics": {
-          "Accuracy": 1,
+          "Accuracy": 0,
           "Recall": 1.0,
           "Precision": 1.0,
           "jaccard": 1.0,
@@ -6897,7 +6897,7 @@
         "seed": null,
         "lucb_info": null,
         "metrics": {
-          "Accuracy": 1,
+          "Accuracy": 0,
           "Recall": 1.0,
           "Precision": 1.0,
           "jaccard": 1.0,
@@ -7197,7 +7197,7 @@
           "F1": 0.2727272727272727,
           "Missed": 0.0,
           "% Overshoot": 0.5,
-          "Average Overshoot": 1.6666666666666667,
+          "Average Overshoot": 1.0,
           "Average Repeat": 4.333333333333333
         }
       },
@@ -7284,7 +7284,7 @@
         "seed": null,
         "lucb_info": null,
         "metrics": {
-          "Accuracy": 1,
+          "Accuracy": 0,
           "Recall": 1.0,
           "Precision": 1.0,
           "jaccard": 1.0,
@@ -7379,7 +7379,7 @@
         "seed": null,
         "lucb_info": null,
         "metrics": {
-          "Accuracy": 1,
+          "Accuracy": 0,
           "Recall": 1.0,
           "Precision": 1.0,
           "jaccard": 1.0,
@@ -8018,7 +8018,7 @@
           "F1": 0.5,
           "Missed": 0.0,
           "% Overshoot": 0.3333333333333333,
-          "Average Overshoot": 1.5,
+          "Average Overshoot": 1.0,
           "Average Repeat": 3.0
         }
       },
@@ -8273,7 +8273,7 @@
         "seed": null,
         "lucb_info": null,
         "metrics": {
-          "Accuracy": 1,
+          "Accuracy": 0,
           "Recall": 1.0,
           "Precision": 1.0,
           "jaccard": 1.0,
@@ -9667,7 +9667,7 @@
         "seed": null,
         "lucb_info": null,
         "metrics": {
-          "Accuracy": 1,
+          "Accuracy": 0,
           "Recall": 1.0,
           "Precision": 1.0,
           "jaccard": 1.0,
@@ -10123,7 +10123,7 @@
         "seed": null,
         "lucb_info": null,
         "metrics": {
-          "Accuracy": 1,
+          "Accuracy": 0,
           "Recall": 1.0,
           "Precision": 1.0,
           "jaccard": 1.0,
@@ -10218,7 +10218,7 @@
         "seed": null,
         "lucb_info": null,
         "metrics": {
-          "Accuracy": 1,
+          "Accuracy": 0,
           "Recall": 1.0,
           "Precision": 1.0,
           "jaccard": 1.0,
@@ -10313,7 +10313,7 @@
         "seed": null,
         "lucb_info": null,
         "metrics": {
-          "Accuracy": 1,
+          "Accuracy": 0,
           "Recall": 1.0,
           "Precision": 1.0,
           "jaccard": 1.0,
@@ -10408,7 +10408,7 @@
         "seed": null,
         "lucb_info": null,
         "metrics": {
-          "Accuracy": 1,
+          "Accuracy": 0,
           "Recall": 1.0,
           "Precision": 1.0,
           "jaccard": 1.0,
@@ -10505,7 +10505,7 @@
         "seed": null,
         "lucb_info": null,
         "metrics": {
-          "Accuracy": 1,
+          "Accuracy": 0,
           "Recall": 1.0,
           "Precision": 1.0,
           "jaccard": 1.0,
@@ -10605,7 +10605,7 @@
         "seed": null,
         "lucb_info": null,
         "metrics": {
-          "Accuracy": 1,
+          "Accuracy": 0,
           "Recall": 1.0,
           "Precision": 1.0,
           "jaccard": 1.0,
@@ -10700,7 +10700,7 @@
         "seed": null,
         "lucb_info": null,
         "metrics": {
-          "Accuracy": 1,
+          "Accuracy": 0,
           "Recall": 1.0,
           "Precision": 1.0,
           "jaccard": 1.0,
@@ -10810,7 +10810,7 @@
         "seed": null,
         "lucb_info": null,
         "metrics": {
-          "Accuracy": 1,
+          "Accuracy": 0,
           "Recall": 1.0,
           "Precision": 1.0,
           "jaccard": 1.0,
@@ -10905,7 +10905,7 @@
         "seed": null,
         "lucb_info": null,
         "metrics": {
-          "Accuracy": 1,
+          "Accuracy": 0,
           "Recall": 1.0,
           "Precision": 1.0,
           "jaccard": 1.0,
@@ -11000,7 +11000,7 @@
         "seed": null,
         "lucb_info": null,
         "metrics": {
-          "Accuracy": 1,
+          "Accuracy": 0,
           "Recall": 1.0,
           "Precision": 1.0,
           "jaccard": 1.0,
@@ -11481,7 +11481,7 @@
         "seed": null,
         "lucb_info": null,
         "metrics": {
-          "Accuracy": 1,
+          "Accuracy": 0,
           "Recall": 1.0,
           "Precision": 1.0,
           "jaccard": 1.0,
@@ -11591,7 +11591,7 @@
         "seed": null,
         "lucb_info": null,
         "metrics": {
-          "Accuracy": 1,
+          "Accuracy": 0,
           "Recall": 1.0,
           "Precision": 1.0,
           "jaccard": 1.0,
@@ -11701,7 +11701,7 @@
         "seed": null,
         "lucb_info": null,
         "metrics": {
-          "Accuracy": 1,
+          "Accuracy": 0,
           "Recall": 1.0,
           "Precision": 1.0,
           "jaccard": 1.0,
@@ -11796,7 +11796,7 @@
         "seed": null,
         "lucb_info": null,
         "metrics": {
-          "Accuracy": 1,
+          "Accuracy": 0,
           "Recall": 1.0,
           "Precision": 1.0,
           "jaccard": 1.0,
@@ -11906,7 +11906,7 @@
         "seed": null,
         "lucb_info": null,
         "metrics": {
-          "Accuracy": 1,
+          "Accuracy": 0,
           "Recall": 1.0,
           "Precision": 1.0,
           "jaccard": 1.0,
@@ -12387,7 +12387,7 @@
         "seed": null,
         "lucb_info": null,
         "metrics": {
-          "Accuracy": 1,
+          "Accuracy": 0,
           "Recall": 1.0,
           "Precision": 1.0,
           "jaccard": 1.0,
@@ -12502,7 +12502,7 @@
         "seed": null,
         "lucb_info": null,
         "metrics": {
-          "Accuracy": 1,
+          "Accuracy": 0,
           "Recall": 1.0,
           "Precision": 1.0,
           "jaccard": 1.0,
@@ -12983,7 +12983,7 @@
         "seed": null,
         "lucb_info": null,
         "metrics": {
-          "Accuracy": 1,
+          "Accuracy": 0,
           "Recall": 1.0,
           "Precision": 1.0,
           "jaccard": 1.0,
@@ -13080,7 +13080,7 @@
         "seed": null,
         "lucb_info": null,
         "metrics": {
-          "Accuracy": 1,
+          "Accuracy": 0,
           "Recall": 1.0,
           "Precision": 1.0,
           "jaccard": 1.0,
@@ -13175,7 +13175,7 @@
         "seed": null,
         "lucb_info": null,
         "metrics": {
-          "Accuracy": 1,
+          "Accuracy": 0,
           "Recall": 1.0,
           "Precision": 1.0,
           "jaccard": 1.0,
@@ -13631,7 +13631,7 @@
         "seed": null,
         "lucb_info": null,
         "metrics": {
-          "Accuracy": 1,
+          "Accuracy": 0,
           "Recall": 1.0,
           "Precision": 1.0,
           "jaccard": 1.0,
@@ -13726,7 +13726,7 @@
         "seed": null,
         "lucb_info": null,
         "metrics": {
-          "Accuracy": 1,
+          "Accuracy": 0,
           "Recall": 1.0,
           "Precision": 1.0,
           "jaccard": 1.0,
@@ -13821,7 +13821,7 @@
         "seed": null,
         "lucb_info": null,
         "metrics": {
-          "Accuracy": 1,
+          "Accuracy": 0,
           "Recall": 1.0,
           "Precision": 1.0,
           "jaccard": 1.0,
@@ -13916,7 +13916,7 @@
         "seed": null,
         "lucb_info": null,
         "metrics": {
-          "Accuracy": 1,
+          "Accuracy": 0,
           "Recall": 1.0,
           "Precision": 1.0,
           "jaccard": 1.0,
@@ -14013,7 +14013,7 @@
         "seed": null,
         "lucb_info": null,
         "metrics": {
-          "Accuracy": 1,
+          "Accuracy": 0,
           "Recall": 1.0,
           "Precision": 1.0,
           "jaccard": 1.0,
@@ -14113,7 +14113,7 @@
         "seed": null,
         "lucb_info": null,
         "metrics": {
-          "Accuracy": 1,
+          "Accuracy": 0,
           "Recall": 1.0,
           "Precision": 1.0,
           "jaccard": 1.0,
@@ -14208,7 +14208,7 @@
         "seed": null,
         "lucb_info": null,
         "metrics": {
-          "Accuracy": 1,
+          "Accuracy": 0,
           "Recall": 1.0,
           "Precision": 1.0,
           "jaccard": 1.0,
@@ -14318,7 +14318,7 @@
         "seed": null,
         "lucb_info": null,
         "metrics": {
-          "Accuracy": 1,
+          "Accuracy": 0,
           "Recall": 1.0,
           "Precision": 1.0,
           "jaccard": 1.0,
@@ -14413,7 +14413,7 @@
         "seed": null,
         "lucb_info": null,
         "metrics": {
-          "Accuracy": 1,
+          "Accuracy": 0,
           "Recall": 1.0,
           "Precision": 1.0,
           "jaccard": 1.0,
@@ -14508,7 +14508,7 @@
         "seed": null,
         "lucb_info": null,
         "metrics": {
-          "Accuracy": 1,
+          "Accuracy": 0,
           "Recall": 1.0,
           "Precision": 1.0,
           "jaccard": 1.0,
@@ -14989,7 +14989,7 @@
         "seed": null,
         "lucb_info": null,
         "metrics": {
-          "Accuracy": 1,
+          "Accuracy": 0,
           "Recall": 1.0,
           "Precision": 1.0,
           "jaccard": 1.0,
@@ -15099,7 +15099,7 @@
         "seed": null,
         "lucb_info": null,
         "metrics": {
-          "Accuracy": 1,
+          "Accuracy": 0,
           "Recall": 1.0,
           "Precision": 1.0,
           "jaccard": 1.0,
@@ -15209,7 +15209,7 @@
         "seed": null,
         "lucb_info": null,
         "metrics": {
-          "Accuracy": 1,
+          "Accuracy": 0,
           "Recall": 1.0,
           "Precision": 1.0,
           "jaccard": 1.0,
@@ -15304,7 +15304,7 @@
         "seed": null,
         "lucb_info": null,
         "metrics": {
-          "Accuracy": 1,
+          "Accuracy": 0,
           "Recall": 1.0,
           "Precision": 1.0,
           "jaccard": 1.0,
@@ -15414,7 +15414,7 @@
         "seed": null,
         "lucb_info": null,
         "metrics": {
-          "Accuracy": 1,
+          "Accuracy": 0,
           "Recall": 1.0,
           "Precision": 1.0,
           "jaccard": 1.0,
@@ -15895,7 +15895,7 @@
         "seed": null,
         "lucb_info": null,
         "metrics": {
-          "Accuracy": 1,
+          "Accuracy": 0,
           "Recall": 1.0,
           "Precision": 1.0,
           "jaccard": 1.0,
@@ -16010,7 +16010,7 @@
         "seed": null,
         "lucb_info": null,
         "metrics": {
-          "Accuracy": 1,
+          "Accuracy": 0,
           "Recall": 1.0,
           "Precision": 1.0,
           "jaccard": 1.0,
@@ -16491,7 +16491,7 @@
         "seed": null,
         "lucb_info": null,
         "metrics": {
-          "Accuracy": 1,
+          "Accuracy": 0,
           "Recall": 1.0,
           "Precision": 1.0,
           "jaccard": 1.0,
@@ -16588,7 +16588,7 @@
         "seed": null,
         "lucb_info": null,
         "metrics": {
-          "Accuracy": 1,
+          "Accuracy": 0,
           "Recall": 1.0,
           "Precision": 1.0,
           "jaccard": 1.0,
@@ -16683,7 +16683,7 @@
         "seed": null,
         "lucb_info": null,
         "metrics": {
-          "Accuracy": 1,
+          "Accuracy": 0,
           "Recall": 1.0,
           "Precision": 1.0,
           "jaccard": 1.0,
@@ -17139,7 +17139,7 @@
         "seed": null,
         "lucb_info": null,
         "metrics": {
-          "Accuracy": 1,
+          "Accuracy": 0,
           "Recall": 1.0,
           "Precision": 1.0,
           "jaccard": 1.0,
@@ -17234,7 +17234,7 @@
         "seed": null,
         "lucb_info": null,
         "metrics": {
-          "Accuracy": 1,
+          "Accuracy": 0,
           "Recall": 1.0,
           "Precision": 1.0,
           "jaccard": 1.0,
@@ -17329,7 +17329,7 @@
         "seed": null,
         "lucb_info": null,
         "metrics": {
-          "Accuracy": 1,
+          "Accuracy": 0,
           "Recall": 1.0,
           "Precision": 1.0,
           "jaccard": 1.0,
@@ -17424,7 +17424,7 @@
         "seed": null,
         "lucb_info": null,
         "metrics": {
-          "Accuracy": 1,
+          "Accuracy": 0,
           "Recall": 1.0,
           "Precision": 1.0,
           "jaccard": 1.0,
@@ -17521,7 +17521,7 @@
         "seed": null,
         "lucb_info": null,
         "metrics": {
-          "Accuracy": 1,
+          "Accuracy": 0,
           "Recall": 1.0,
           "Precision": 1.0,
           "jaccard": 1.0,
@@ -17621,7 +17621,7 @@
         "seed": null,
         "lucb_info": null,
         "metrics": {
-          "Accuracy": 1,
+          "Accuracy": 0,
           "Recall": 1.0,
           "Precision": 1.0,
           "jaccard": 1.0,
@@ -17716,7 +17716,7 @@
         "seed": null,
         "lucb_info": null,
         "metrics": {
-          "Accuracy": 1,
+          "Accuracy": 0,
           "Recall": 1.0,
           "Precision": 1.0,
           "jaccard": 1.0,
@@ -17826,7 +17826,7 @@
         "seed": null,
         "lucb_info": null,
         "metrics": {
-          "Accuracy": 1,
+          "Accuracy": 0,
           "Recall": 1.0,
           "Precision": 1.0,
           "jaccard": 1.0,
@@ -17921,7 +17921,7 @@
         "seed": null,
         "lucb_info": null,
         "metrics": {
-          "Accuracy": 1,
+          "Accuracy": 0,
           "Recall": 1.0,
           "Precision": 1.0,
           "jaccard": 1.0,
@@ -18016,7 +18016,7 @@
         "seed": null,
         "lucb_info": null,
         "metrics": {
-          "Accuracy": 1,
+          "Accuracy": 0,
           "Recall": 1.0,
           "Precision": 1.0,
           "jaccard": 1.0,
@@ -18497,7 +18497,7 @@
         "seed": null,
         "lucb_info": null,
         "metrics": {
-          "Accuracy": 1,
+          "Accuracy": 0,
           "Recall": 1.0,
           "Precision": 1.0,
           "jaccard": 1.0,
@@ -18607,7 +18607,7 @@
         "seed": null,
         "lucb_info": null,
         "metrics": {
-          "Accuracy": 1,
+          "Accuracy": 0,
           "Recall": 1.0,
           "Precision": 1.0,
           "jaccard": 1.0,
@@ -18717,7 +18717,7 @@
         "seed": null,
         "lucb_info": null,
         "metrics": {
-          "Accuracy": 1,
+          "Accuracy": 0,
           "Recall": 1.0,
           "Precision": 1.0,
           "jaccard": 1.0,
@@ -18812,7 +18812,7 @@
         "seed": null,
         "lucb_info": null,
         "metrics": {
-          "Accuracy": 1,
+          "Accuracy": 0,
           "Recall": 1.0,
           "Precision": 1.0,
           "jaccard": 1.0,
@@ -18922,7 +18922,7 @@
         "seed": null,
         "lucb_info": null,
         "metrics": {
-          "Accuracy": 1,
+          "Accuracy": 0,
           "Recall": 1.0,
           "Precision": 1.0,
           "jaccard": 1.0,
@@ -19403,7 +19403,7 @@
         "seed": null,
         "lucb_info": null,
         "metrics": {
-          "Accuracy": 1,
+          "Accuracy": 0,
           "Recall": 1.0,
           "Precision": 1.0,
           "jaccard": 1.0,
@@ -19518,7 +19518,7 @@
         "seed": null,
         "lucb_info": null,
         "metrics": {
-          "Accuracy": 1,
+          "Accuracy": 0,
           "Recall": 1.0,
           "Precision": 1.0,
           "jaccard": 1.0,
@@ -19999,7 +19999,7 @@
         "seed": null,
         "lucb_info": null,
         "metrics": {
-          "Accuracy": 1,
+          "Accuracy": 0,
           "Recall": 1.0,
           "Precision": 1.0,
           "jaccard": 1.0,
@@ -20096,7 +20096,7 @@
         "seed": null,
         "lucb_info": null,
         "metrics": {
-          "Accuracy": 1,
+          "Accuracy": 0,
           "Recall": 1.0,
           "Precision": 1.0,
           "jaccard": 1.0,
@@ -20191,7 +20191,7 @@
         "seed": null,
         "lucb_info": null,
         "metrics": {
-          "Accuracy": 1,
+          "Accuracy": 0,
           "Recall": 1.0,
           "Precision": 1.0,
           "jaccard": 1.0,
@@ -20647,7 +20647,7 @@
         "seed": null,
         "lucb_info": null,
         "metrics": {
-          "Accuracy": 1,
+          "Accuracy": 0,
           "Recall": 1.0,
           "Precision": 1.0,
           "jaccard": 1.0,
@@ -20742,7 +20742,7 @@
         "seed": null,
         "lucb_info": null,
         "metrics": {
-          "Accuracy": 1,
+          "Accuracy": 0,
           "Recall": 1.0,
           "Precision": 1.0,
           "jaccard": 1.0,
@@ -20837,7 +20837,7 @@
         "seed": null,
         "lucb_info": null,
         "metrics": {
-          "Accuracy": 1,
+          "Accuracy": 0,
           "Recall": 1.0,
           "Precision": 1.0,
           "jaccard": 1.0,
@@ -20932,7 +20932,7 @@
         "seed": null,
         "lucb_info": null,
         "metrics": {
-          "Accuracy": 1,
+          "Accuracy": 0,
           "Recall": 1.0,
           "Precision": 1.0,
           "jaccard": 1.0,
@@ -21029,7 +21029,7 @@
         "seed": null,
         "lucb_info": null,
         "metrics": {
-          "Accuracy": 1,
+          "Accuracy": 0,
           "Recall": 1.0,
           "Precision": 1.0,
           "jaccard": 1.0,
@@ -21129,7 +21129,7 @@
         "seed": null,
         "lucb_info": null,
         "metrics": {
-          "Accuracy": 1,
+          "Accuracy": 0,
           "Recall": 1.0,
           "Precision": 1.0,
           "jaccard": 1.0,
@@ -21224,7 +21224,7 @@
         "seed": null,
         "lucb_info": null,
         "metrics": {
-          "Accuracy": 1,
+          "Accuracy": 0,
           "Recall": 1.0,
           "Precision": 1.0,
           "jaccard": 1.0,
@@ -21334,7 +21334,7 @@
         "seed": null,
         "lucb_info": null,
         "metrics": {
-          "Accuracy": 1,
+          "Accuracy": 0,
           "Recall": 1.0,
           "Precision": 1.0,
           "jaccard": 1.0,
@@ -21429,7 +21429,7 @@
         "seed": null,
         "lucb_info": null,
         "metrics": {
-          "Accuracy": 1,
+          "Accuracy": 0,
           "Recall": 1.0,
           "Precision": 1.0,
           "jaccard": 1.0,
@@ -21524,7 +21524,7 @@
         "seed": null,
         "lucb_info": null,
         "metrics": {
-          "Accuracy": 1,
+          "Accuracy": 0,
           "Recall": 1.0,
           "Precision": 1.0,
           "jaccard": 1.0,
@@ -22005,7 +22005,7 @@
         "seed": null,
         "lucb_info": null,
         "metrics": {
-          "Accuracy": 1,
+          "Accuracy": 0,
           "Recall": 1.0,
           "Precision": 1.0,
           "jaccard": 1.0,
@@ -22115,7 +22115,7 @@
         "seed": null,
         "lucb_info": null,
         "metrics": {
-          "Accuracy": 1,
+          "Accuracy": 0,
           "Recall": 1.0,
           "Precision": 1.0,
           "jaccard": 1.0,
@@ -22225,7 +22225,7 @@
         "seed": null,
         "lucb_info": null,
         "metrics": {
-          "Accuracy": 1,
+          "Accuracy": 0,
           "Recall": 1.0,
           "Precision": 1.0,
           "jaccard": 1.0,
@@ -22320,7 +22320,7 @@
         "seed": null,
         "lucb_info": null,
         "metrics": {
-          "Accuracy": 1,
+          "Accuracy": 0,
           "Recall": 1.0,
           "Precision": 1.0,
           "jaccard": 1.0,
@@ -22430,7 +22430,7 @@
         "seed": null,
         "lucb_info": null,
         "metrics": {
-          "Accuracy": 1,
+          "Accuracy": 0,
           "Recall": 1.0,
           "Precision": 1.0,
           "jaccard": 1.0,
@@ -22911,7 +22911,7 @@
         "seed": null,
         "lucb_info": null,
         "metrics": {
-          "Accuracy": 1,
+          "Accuracy": 0,
           "Recall": 1.0,
           "Precision": 1.0,
           "jaccard": 1.0,
@@ -23026,7 +23026,7 @@
         "seed": null,
         "lucb_info": null,
         "metrics": {
-          "Accuracy": 1,
+          "Accuracy": 0,
           "Recall": 1.0,
           "Precision": 1.0,
           "jaccard": 1.0,
@@ -23507,7 +23507,7 @@
         "seed": null,
         "lucb_info": null,
         "metrics": {
-          "Accuracy": 1,
+          "Accuracy": 0,
           "Recall": 1.0,
           "Precision": 1.0,
           "jaccard": 1.0,
@@ -23604,7 +23604,7 @@
         "seed": null,
         "lucb_info": null,
         "metrics": {
-          "Accuracy": 1,
+          "Accuracy": 0,
           "Recall": 1.0,
           "Precision": 1.0,
           "jaccard": 1.0,
@@ -23699,7 +23699,7 @@
         "seed": null,
         "lucb_info": null,
         "metrics": {
-          "Accuracy": 1,
+          "Accuracy": 0,
           "Recall": 1.0,
           "Precision": 1.0,
           "jaccard": 1.0,
@@ -24155,7 +24155,7 @@
         "seed": null,
         "lucb_info": null,
         "metrics": {
-          "Accuracy": 1,
+          "Accuracy": 0,
           "Recall": 1.0,
           "Precision": 1.0,
           "jaccard": 1.0,
@@ -24250,7 +24250,7 @@
         "seed": null,
         "lucb_info": null,
         "metrics": {
-          "Accuracy": 1,
+          "Accuracy": 0,
           "Recall": 1.0,
           "Precision": 1.0,
           "jaccard": 1.0,
@@ -24345,7 +24345,7 @@
         "seed": null,
         "lucb_info": null,
         "metrics": {
-          "Accuracy": 1,
+          "Accuracy": 0,
           "Recall": 1.0,
           "Precision": 1.0,
           "jaccard": 1.0,
@@ -24440,7 +24440,7 @@
         "seed": null,
         "lucb_info": null,
         "metrics": {
-          "Accuracy": 1,
+          "Accuracy": 0,
           "Recall": 1.0,
           "Precision": 1.0,
           "jaccard": 1.0,
@@ -24537,7 +24537,7 @@
         "seed": null,
         "lucb_info": null,
         "metrics": {
-          "Accuracy": 1,
+          "Accuracy": 0,
           "Recall": 1.0,
           "Precision": 1.0,
           "jaccard": 1.0,
@@ -24637,7 +24637,7 @@
         "seed": null,
         "lucb_info": null,
         "metrics": {
-          "Accuracy": 1,
+          "Accuracy": 0,
           "Recall": 1.0,
           "Precision": 1.0,
           "jaccard": 1.0,
@@ -24732,7 +24732,7 @@
         "seed": null,
         "lucb_info": null,
         "metrics": {
-          "Accuracy": 1,
+          "Accuracy": 0,
           "Recall": 1.0,
           "Precision": 1.0,
           "jaccard": 1.0,
@@ -24842,7 +24842,7 @@
         "seed": null,
         "lucb_info": null,
         "metrics": {
-          "Accuracy": 1,
+          "Accuracy": 0,
           "Recall": 1.0,
           "Precision": 1.0,
           "jaccard": 1.0,
@@ -24937,7 +24937,7 @@
         "seed": null,
         "lucb_info": null,
         "metrics": {
-          "Accuracy": 1,
+          "Accuracy": 0,
           "Recall": 1.0,
           "Precision": 1.0,
           "jaccard": 1.0,
@@ -25032,7 +25032,7 @@
         "seed": null,
         "lucb_info": null,
         "metrics": {
-          "Accuracy": 1,
+          "Accuracy": 0,
           "Recall": 1.0,
           "Precision": 1.0,
           "jaccard": 1.0,
@@ -25513,7 +25513,7 @@
         "seed": null,
         "lucb_info": null,
         "metrics": {
-          "Accuracy": 1,
+          "Accuracy": 0,
           "Recall": 1.0,
           "Precision": 1.0,
           "jaccard": 1.0,
@@ -25623,7 +25623,7 @@
         "seed": null,
         "lucb_info": null,
         "metrics": {
-          "Accuracy": 1,
+          "Accuracy": 0,
           "Recall": 1.0,
           "Precision": 1.0,
           "jaccard": 1.0,
@@ -25733,7 +25733,7 @@
         "seed": null,
         "lucb_info": null,
         "metrics": {
-          "Accuracy": 1,
+          "Accuracy": 0,
           "Recall": 1.0,
           "Precision": 1.0,
           "jaccard": 1.0,
@@ -25828,7 +25828,7 @@
         "seed": null,
         "lucb_info": null,
         "metrics": {
-          "Accuracy": 1,
+          "Accuracy": 0,
           "Recall": 1.0,
           "Precision": 1.0,
           "jaccard": 1.0,
@@ -25938,7 +25938,7 @@
         "seed": null,
         "lucb_info": null,
         "metrics": {
-          "Accuracy": 1,
+          "Accuracy": 0,
           "Recall": 1.0,
           "Precision": 1.0,
           "jaccard": 1.0,
@@ -26419,7 +26419,7 @@
         "seed": null,
         "lucb_info": null,
         "metrics": {
-          "Accuracy": 1,
+          "Accuracy": 0,
           "Recall": 1.0,
           "Precision": 1.0,
           "jaccard": 1.0,
@@ -26534,7 +26534,7 @@
         "seed": null,
         "lucb_info": null,
         "metrics": {
-          "Accuracy": 1,
+          "Accuracy": 0,
           "Recall": 1.0,
           "Precision": 1.0,
           "jaccard": 1.0,
@@ -27015,7 +27015,7 @@
         "seed": null,
         "lucb_info": null,
         "metrics": {
-          "Accuracy": 1,
+          "Accuracy": 0,
           "Recall": 1.0,
           "Precision": 1.0,
           "jaccard": 1.0,
@@ -27112,7 +27112,7 @@
         "seed": null,
         "lucb_info": null,
         "metrics": {
-          "Accuracy": 1,
+          "Accuracy": 0,
           "Recall": 1.0,
           "Precision": 1.0,
           "jaccard": 1.0,
@@ -28727,7 +28727,7 @@
           "F1": 0.2222222222222222,
           "Missed": 0.6666666666666666,
           "% Overshoot": 0.16666666666666666,
-          "Average Overshoot": 4.0,
+          "Average Overshoot": 3.0,
           "Average Repeat": 2.0
         }
       },
@@ -31017,7 +31017,7 @@
           "F1": 0.2,
           "Missed": 0.7666666666666667,
           "% Overshoot": 0.1,
-          "Average Overshoot": 3.3333333333333335,
+          "Average Overshoot": 2.0,
           "Average Repeat": 2.0
         }
       },
@@ -31284,7 +31284,7 @@
           "F1": 0,
           "Missed": 0.9,
           "% Overshoot": 0.1,
-          "Average Overshoot": 2.0,
+          "Average Overshoot": 1.6666666666666667,
           "Average Repeat": 2.6666666666666665
         }
       },
@@ -31784,7 +31784,7 @@
           "F1": 0,
           "Missed": 0.8,
           "% Overshoot": 0.2,
-          "Average Overshoot": 4.333333333333333,
+          "Average Overshoot": 3.6666666666666665,
           "Average Repeat": 2.1666666666666665
         }
       },
@@ -33225,7 +33225,7 @@
           "F1": 0.16216216216216217,
           "Missed": 0.8666666666666667,
           "% Overshoot": 0.03333333333333333,
-          "Average Overshoot": 3.0,
+          "Average Overshoot": 2.0,
           "Average Repeat": 4.0
         }
       },
@@ -33430,7 +33430,7 @@
           "F1": 0.1818181818181818,
           "Missed": 0.6666666666666666,
           "% Overshoot": 0.16666666666666666,
-          "Average Overshoot": 4.0,
+          "Average Overshoot": 3.0,
           "Average Repeat": 4.0
         }
       },
@@ -33664,7 +33664,7 @@
           "F1": 0,
           "Missed": 0.9,
           "% Overshoot": 0.1,
-          "Average Overshoot": 2.0,
+          "Average Overshoot": 1.6666666666666667,
           "Average Repeat": 2.3333333333333335
         }
       },
@@ -36051,7 +36051,7 @@
           "F1": 0.1818181818181818,
           "Missed": 0.6666666666666666,
           "% Overshoot": 0.16666666666666666,
-          "Average Overshoot": 5.0,
+          "Average Overshoot": 4.0,
           "Average Repeat": 4.0
         }
       }
@@ -37852,7 +37852,7 @@
           "F1": 0.13333333333333333,
           "Missed": 0.7333333333333333,
           "% Overshoot": 0.16666666666666666,
-          "Average Overshoot": 3.2,
+          "Average Overshoot": 2.0,
           "Average Repeat": 2.4
         }
       },
@@ -38298,7 +38298,7 @@
           "F1": 0.16216216216216217,
           "Missed": 0.8666666666666667,
           "% Overshoot": 0.03333333333333333,
-          "Average Overshoot": 4.0,
+          "Average Overshoot": 3.0,
           "Average Repeat": 4.0
         }
       },
@@ -39814,7 +39814,7 @@
           "F1": 0.13333333333333333,
           "Missed": 0.0,
           "% Overshoot": 0.8333333333333334,
-          "Average Overshoot": 2.8,
+          "Average Overshoot": 2.6,
           "Average Repeat": 1.6
         }
       },
@@ -40327,7 +40327,7 @@
           "F1": 0,
           "Missed": 0.7,
           "% Overshoot": 0.3,
-          "Average Overshoot": 1.8888888888888888,
+          "Average Overshoot": 1.3333333333333333,
           "Average Repeat": 2.111111111111111
         }
       },
@@ -41733,7 +41733,7 @@
           "F1": 0.14634146341463417,
           "Missed": 0.7333333333333333,
           "% Overshoot": 0.16666666666666666,
-          "Average Overshoot": 2.0,
+          "Average Overshoot": 1.6,
           "Average Repeat": 1.6
         }
       },
@@ -42502,7 +42502,7 @@
           "F1": 0,
           "Missed": 0.7,
           "% Overshoot": 0.3,
-          "Average Overshoot": 1.4444444444444444,
+          "Average Overshoot": 1.3333333333333333,
           "Average Repeat": 1.7777777777777777
         }
       },
@@ -46341,7 +46341,7 @@
           "F1": 0.13953488372093023,
           "Missed": 0.7333333333333333,
           "% Overshoot": 0.16666666666666666,
-          "Average Overshoot": 3.2,
+          "Average Overshoot": 3.0,
           "Average Repeat": 2.0
         }
       },
@@ -47017,7 +47017,7 @@
           "F1": 0.08,
           "Missed": 0.0,
           "% Overshoot": 0.8333333333333334,
-          "Average Overshoot": 4.6,
+          "Average Overshoot": 4.2,
           "Average Repeat": 3.6
         }
       },
@@ -50088,7 +50088,7 @@
           "F1": 0,
           "Missed": 0.7333333333333333,
           "% Overshoot": 0.26666666666666666,
-          "Average Overshoot": 3.0,
+          "Average Overshoot": 2.875,
           "Average Repeat": 2.25
         }
       },
@@ -50475,7 +50475,7 @@
           "F1": 0.17777777777777776,
           "Missed": 0.7,
           "% Overshoot": 0.16666666666666666,
-          "Average Overshoot": 2.0,
+          "Average Overshoot": 1.6,
           "Average Repeat": 2.2
         }
       },
@@ -55362,7 +55362,7 @@
           "F1": 0.3225806451612903,
           "Missed": 0.3333333333333333,
           "% Overshoot": 0.3333333333333333,
-          "Average Overshoot": 1.1,
+          "Average Overshoot": 1.0,
           "Average Repeat": 2.2
         }
       },
@@ -57683,7 +57683,7 @@
           "F1": 0.17857142857142855,
           "Missed": 0.6666666666666666,
           "% Overshoot": 0.16666666666666666,
-          "Average Overshoot": 2.6,
+          "Average Overshoot": 2.4,
           "Average Repeat": 4.2
         }
       },
@@ -58506,7 +58506,7 @@
           "F1": 0.0625,
           "Missed": 0.0,
           "% Overshoot": 0.8333333333333334,
-          "Average Overshoot": 4.0,
+          "Average Overshoot": 3.2,
           "Average Repeat": 5.0
         }
       },
@@ -59087,7 +59087,7 @@
           "F1": 0.12244897959183673,
           "Missed": 0.7333333333333333,
           "% Overshoot": 0.16666666666666666,
-          "Average Overshoot": 2.8,
+          "Average Overshoot": 2.4,
           "Average Repeat": 3.2
         }
       },
@@ -59474,7 +59474,7 @@
           "F1": 0.09090909090909091,
           "Missed": 0.0,
           "% Overshoot": 0.8333333333333334,
-          "Average Overshoot": 2.0,
+          "Average Overshoot": 1.6,
           "Average Repeat": 3.0
         }
       },
@@ -63076,7 +63076,7 @@
           "F1": 0.03174603174603175,
           "Missed": 0.7,
           "% Overshoot": 0.26666666666666666,
-          "Average Overshoot": 3.0,
+          "Average Overshoot": 2.75,
           "Average Repeat": 4.0
         }
       },
@@ -63546,7 +63546,7 @@
           "F1": 0.2040816326530612,
           "Missed": 0.6666666666666666,
           "% Overshoot": 0.16666666666666666,
-          "Average Overshoot": 1.8,
+          "Average Overshoot": 1.6,
           "Average Repeat": 2.8
         }
       },
@@ -65323,7 +65323,7 @@
           "F1": 0.1388888888888889,
           "Missed": 0.4,
           "% Overshoot": 0.43333333333333335,
-          "Average Overshoot": 1.5384615384615385,
+          "Average Overshoot": 1.4615384615384615,
           "Average Repeat": 2.8461538461538463
         }
       },
@@ -65780,7 +65780,7 @@
           "F1": 0.09523809523809522,
           "Missed": 0.0,
           "% Overshoot": 0.8333333333333334,
-          "Average Overshoot": 3.6,
+          "Average Overshoot": 3.4,
           "Average Repeat": 2.8
         }
       }
@@ -70077,7 +70077,7 @@
           "F1": 0.058823529411764705,
           "Missed": 0.0,
           "% Overshoot": 0.8333333333333334,
-          "Average Overshoot": 4.6,
+          "Average Overshoot": 4.4,
           "Average Repeat": 5.4
         }
       },
@@ -74010,7 +74010,7 @@
           "F1": 0.16666666666666666,
           "Missed": 0.6666666666666666,
           "% Overshoot": 0.16666666666666666,
-          "Average Overshoot": 1.6,
+          "Average Overshoot": 1.4,
           "Average Repeat": 5.0
         }
       },
@@ -75107,7 +75107,7 @@
           "F1": 0.04347826086956522,
           "Missed": 0.0,
           "% Overshoot": 0.8333333333333334,
-          "Average Overshoot": 3.0,
+          "Average Overshoot": 2.4,
           "Average Repeat": 7.8
         }
       },
@@ -75935,7 +75935,7 @@
           "F1": 0.10344827586206898,
           "Missed": 0.6666666666666666,
           "% Overshoot": 0.23333333333333334,
-          "Average Overshoot": 2.2857142857142856,
+          "Average Overshoot": 2.142857142857143,
           "Average Repeat": 3.5714285714285716
         }
       },
@@ -76528,7 +76528,7 @@
           "F1": 0.0625,
           "Missed": 0.0,
           "% Overshoot": 0.8333333333333334,
-          "Average Overshoot": 1.8,
+          "Average Overshoot": 1.6,
           "Average Repeat": 5.0
         }
       },
@@ -79181,7 +79181,7 @@
           "F1": 0.05555555555555555,
           "Missed": 0.0,
           "% Overshoot": 0.8333333333333334,
-          "Average Overshoot": 3.2,
+          "Average Overshoot": 2.4,
           "Average Repeat": 5.8
         }
       },
@@ -83237,7 +83237,7 @@
           "F1": 0.020833333333333332,
           "Missed": 0.7,
           "% Overshoot": 0.26666666666666666,
-          "Average Overshoot": 3.0,
+          "Average Overshoot": 2.75,
           "Average Repeat": 8.125
         }
       },
@@ -87127,7 +87127,7 @@
           "F1": 0.09259259259259259,
           "Missed": 0.23333333333333334,
           "% Overshoot": 0.6,
-          "Average Overshoot": 1.7222222222222223,
+          "Average Overshoot": 1.5555555555555556,
           "Average Repeat": 4.055555555555555
         }
       },
@@ -87798,7 +87798,7 @@
           "F1": 0.06451612903225806,
           "Missed": 0.0,
           "% Overshoot": 0.8333333333333334,
-          "Average Overshoot": 2.4,
+          "Average Overshoot": 2.0,
           "Average Repeat": 4.8
         }
       }
@@ -96156,7 +96156,7 @@
           "F1": 0.027777777777777776,
           "Missed": 0.0,
           "% Overshoot": 0.8333333333333334,
-          "Average Overshoot": 4.2,
+          "Average Overshoot": 3.6,
           "Average Repeat": 13.0
         }
       },
@@ -99928,7 +99928,7 @@
           "F1": 0.1219512195121951,
           "Missed": 0.6666666666666666,
           "% Overshoot": 0.16666666666666666,
-          "Average Overshoot": 3.8,
+          "Average Overshoot": 3.4,
           "Average Repeat": 9.4
         }
       },
@@ -102486,7 +102486,7 @@
           "F1": 0.14705882352941177,
           "Missed": 0.5666666666666667,
           "% Overshoot": 0.26666666666666666,
-          "Average Overshoot": 1.5,
+          "Average Overshoot": 1.375,
           "Average Repeat": 4.125
         }
       },
@@ -103342,7 +103342,7 @@
           "F1": 0.04761904761904762,
           "Missed": 0.0,
           "% Overshoot": 0.8333333333333334,
-          "Average Overshoot": 1.8,
+          "Average Overshoot": 1.4,
           "Average Repeat": 7.0
         }
       },
@@ -104871,7 +104871,7 @@
           "F1": 0.07228915662650602,
           "Missed": 0.6,
           "% Overshoot": 0.3,
-          "Average Overshoot": 2.2222222222222223,
+          "Average Overshoot": 2.0,
           "Average Repeat": 5.555555555555555
         }
       },
@@ -105858,7 +105858,7 @@
           "F1": 0.04347826086956522,
           "Missed": 0.0,
           "% Overshoot": 0.8333333333333334,
-          "Average Overshoot": 3.4,
+          "Average Overshoot": 1.6,
           "Average Repeat": 7.8
         }
       },
@@ -107939,7 +107939,7 @@
           "F1": 0.08547008547008546,
           "Missed": 0.2,
           "% Overshoot": 0.6333333333333333,
-          "Average Overshoot": 1.5263157894736843,
+          "Average Overshoot": 1.4210526315789473,
           "Average Repeat": 4.315789473684211
         }
       },
@@ -109467,7 +109467,7 @@
           "F1": 0.03333333333333333,
           "Missed": 0.0,
           "% Overshoot": 0.8333333333333334,
-          "Average Overshoot": 2.8,
+          "Average Overshoot": 2.4,
           "Average Repeat": 10.6
         }
       },
@@ -116864,7 +116864,7 @@
           "F1": 0.012422360248447206,
           "Missed": 0.5666666666666667,
           "% Overshoot": 0.4,
-          "Average Overshoot": 2.4166666666666665,
+          "Average Overshoot": 2.3333333333333335,
           "Average Repeat": 10.833333333333334
         }
       },
@@ -120279,7 +120279,7 @@
           "F1": 0.06818181818181818,
           "Missed": 0.6666666666666666,
           "% Overshoot": 0.23333333333333334,
-          "Average Overshoot": 3.2857142857142856,
+          "Average Overshoot": 2.857142857142857,
           "Average Repeat": 7.857142857142857
         }
       },
@@ -122575,7 +122575,7 @@
           "F1": 0.12903225806451613,
           "Missed": 0.2,
           "% Overshoot": 0.5333333333333333,
-          "Average Overshoot": 1.75,
+          "Average Overshoot": 1.5,
           "Average Repeat": 5.375
         }
       },
@@ -123237,7 +123237,7 @@
           "F1": 0.058823529411764705,
           "Missed": 0.0,
           "% Overshoot": 0.8333333333333334,
-          "Average Overshoot": 2.0,
+          "Average Overshoot": 1.8,
           "Average Repeat": 5.4
         }
       }
@@ -136125,7 +136125,7 @@
           "F1": 0.01834862385321101,
           "Missed": 0.0,
           "% Overshoot": 0.8333333333333334,
-          "Average Overshoot": 3.6,
+          "Average Overshoot": 2.6,
           "Average Repeat": 20.4
         }
       },
@@ -142899,7 +142899,7 @@
           "F1": 0.08064516129032258,
           "Missed": 0.6666666666666666,
           "% Overshoot": 0.16666666666666666,
-          "Average Overshoot": 3.8,
+          "Average Overshoot": 2.6,
           "Average Repeat": 17.8
         }
       },
@@ -144924,7 +144924,7 @@
           "F1": 0.11235955056179776,
           "Missed": 0.7,
           "% Overshoot": 0.13333333333333333,
-          "Average Overshoot": 3.75,
+          "Average Overshoot": 2.25,
           "Average Repeat": 13.5
         }
       },
@@ -151225,7 +151225,7 @@
           "F1": 0.053691275167785234,
           "Missed": 0.3,
           "% Overshoot": 0.5666666666666667,
-          "Average Overshoot": 2.4705882352941178,
+          "Average Overshoot": 2.411764705882353,
           "Average Repeat": 6.764705882352941
         }
       },
@@ -152090,7 +152090,7 @@
           "F1": 0.04347826086956522,
           "Missed": 0.0,
           "% Overshoot": 0.8333333333333334,
-          "Average Overshoot": 1.4,
+          "Average Overshoot": 1.2,
           "Average Repeat": 7.8
         }
       },
@@ -154981,7 +154981,7 @@
           "F1": 0.10596026490066227,
           "Missed": 0.03333333333333333,
           "% Overshoot": 0.7,
-          "Average Overshoot": 1.5238095238095237,
+          "Average Overshoot": 1.4285714285714286,
           "Average Repeat": 5.380952380952381
         }
       },
@@ -156842,7 +156842,7 @@
           "F1": 0.026666666666666665,
           "Missed": 0.0,
           "% Overshoot": 0.8333333333333334,
-          "Average Overshoot": 2.8,
+          "Average Overshoot": 2.4,
           "Average Repeat": 13.6
         }
       },
@@ -168650,7 +168650,7 @@
           "F1": 0.007782101167315177,
           "Missed": 0.36666666666666664,
           "% Overshoot": 0.6,
-          "Average Overshoot": 2.8333333333333335,
+          "Average Overshoot": 2.6666666666666665,
           "Average Repeat": 12.555555555555555
         }
       },
@@ -170841,7 +170841,7 @@
           "F1": 0.08333333333333333,
           "Missed": 0.3,
           "% Overshoot": 0.5333333333333333,
-          "Average Overshoot": 1.75,
+          "Average Overshoot": 1.625,
           "Average Repeat": 5.3125
         }
       },
@@ -173419,7 +173419,7 @@
           "F1": 0.0761904761904762,
           "Missed": 0.6666666666666666,
           "% Overshoot": 0.2,
-          "Average Overshoot": 3.5,
+          "Average Overshoot": 3.1666666666666665,
           "Average Repeat": 11.833333333333334
         }
       },
@@ -176404,7 +176404,7 @@
           "F1": 0.1032258064516129,
           "Missed": 0.03333333333333333,
           "% Overshoot": 0.7,
-          "Average Overshoot": 1.5238095238095237,
+          "Average Overshoot": 1.4285714285714286,
           "Average Repeat": 5.571428571428571
         }
       },
@@ -177090,7 +177090,7 @@
           "F1": 0.05263157894736842,
           "Missed": 0.0,
           "% Overshoot": 0.8333333333333334,
-          "Average Overshoot": 1.6,
+          "Average Overshoot": 1.2,
           "Average Repeat": 6.2
         }
       }

@@ -1,10 +1,11 @@
 from benchmark_models import *
 from evaluation import *
+from sanity import sanity_checks
 
 
 n = 3
 # Example from the paper
-u = [0, 1, 1, 0, 1, 1, 1, 1, 1, 1, 1, 0, 0, 1, 0, 0, 0, 0]
+# u = [0, 1, 1, 0, 1, 1, 1, 1, 1, 1, 1, 0, 0, 1, 0, 0, 0, 0]
 # Version with SD=1 (from 6 to 30 causes)
 u = [0, 1, 1, 0, 1, 1, 1, 1, 1, 1, 1, 0, 0, 1, 0, 0, 1, 0]
 
@@ -15,24 +16,15 @@ u = [0, 1, 1, 0, 1, 1, 1, 1, 1, 1, 1, 0, 0, 1, 0, 0, 1, 0]
 
 # Create the SCM
 scm = get_SMK_SCM(n, u)
-print("Expected causes:", smk_causes(scm.v))
+# print("Expected causes:", smk_causes(scm.v))
 
 # # Print the SCM
 # for variable, value in zip(scm_smk.V, scm_smk.v):
 #     print(variable, value)
 
-# Quick print for 
-# scm.find_causes(ISI=True, exhaustive=False, beam_size=10, verbose=2)
+# Quick print
+scm.find_causes(ISI=True, exhaustive=False, beam_size=252, max_steps=7, verbose=0)
 
-# scm.show_identification_result()
+scm.show_identification_result()
 
-"""Compare Exhaustive and approximate"""
-# print("exhaustive search")
-# scm.find_causes(ISI=True, exhaustive=True, verbose=0)
-# scm.show_identification_result(show_causes=False)
-
-# print()
-# b = 500
-# print(f"beam search with b={b} and max_steps=-1")
-# scm.find_causes(ISI=True, exhaustive=False, beam_size=b, max_steps=-1, verbose=0)
-# scm.show_identification_result(show_causes=False)
+# 9915 / 676
