@@ -63,7 +63,15 @@ def run_one_SMK(contexts, exh, model, algo, bs, n, heuristic, lucb_label,
     seeds = [None] if model != Models.NOISY else range(n_seeds)
     for u, seed in tqdm(product(contexts, seeds), disable=not verbose):
         # Adapt on exhaustivness
-        early_stop = (exh == Exhaustivness.SMALLEST)
+        early_stop = False
+        isi_args = {}
+        if exh == Exhaustivness.SMALLEST:
+            if algo == AlgoTypes.BASE:
+                early_stop = True
+            else:
+                isi_args["minimal_only"] = True
+                isi_args["assign"] = "naive"
+                isi_args["mbs_early_stop"] = True
         u = u.tolist()
         # Adapt on the version of the SCM
         if heuristic is not None: scm = get_SMK_SCM(n, u, heuristic=heuristics_refs[heuristic])
@@ -79,7 +87,7 @@ def run_one_SMK(contexts, exh, model, algo, bs, n, heuristic, lucb_label,
         use_ISI = algo==AlgoTypes.STRUCTURED
         np.random.seed(seed)
         scm.find_causes(ISI=use_ISI, beam_size=bs, epsilon=lucb_params["a"],
-                        max_steps=max_steps, early_stop=early_stop)
+                        max_steps=max_steps, early_stop=early_stop, **isi_args)
         res = {
             "rules": serialize_interventions(scm.interventions),
             "causes": scm.causes_hashable,

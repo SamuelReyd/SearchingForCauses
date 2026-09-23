@@ -99,11 +99,7 @@ experiments_table_1 = {
         (ERParams(n=15, avg_degree=3, k_init=5), "dense"),
         (ERParams(n=20, avg_degree=2, k_init=5), "large")
     ],
-    # "bottleneck":[
-    #     (BottleneckParams(d=7, w=7), "base"),
-    #     (BottleneckParams(d=9, w=5), "long"),
-    #     (BottleneckParams(d=4, w=8), "large")
-    # ]
+
 }
 
 identification_params = {

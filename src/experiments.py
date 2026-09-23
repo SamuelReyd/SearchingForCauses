@@ -47,6 +47,7 @@ exps = (
     (Exhaustivness.FULL, Models.BASE, AlgoTypes.STRUCTURED, [64], [10], heuristics_refs.keys(), None, 7),
     # Noisy
     (Exhaustivness.FULL, Models.NOISY, AlgoTypes.STRUCTURED, beam_sizes, n_attackers, [None], "naive", 7),
+    # (Exhaustivness.FULL, Models.NOISY, AlgoTypes.STRUCTURED, beam_sizes, n_attackers, [None], "lucb", 7),
     (Exhaustivness.FULL, Models.NOISY, AlgoTypes.STRUCTURED, beam_sizes, n_attackers, [None], "lucb", 7),
     (Exhaustivness.FULL, Models.NOISY, AlgoTypes.BASE, beam_sizes, n_attackers, [None], "naive", 7),
     (Exhaustivness.FULL, Models.NOISY, AlgoTypes.BASE, beam_sizes, n_attackers, [None], "lucb", 7),
@@ -64,8 +65,8 @@ exps_reg = (
 )
 
 exps_smallest = (
-    (Exhaustivness.SMALLEST, Models.BASE, AlgoTypes.BASE, [4, 32, 256], smallest_attackers, [None], None, 7),
-    (Exhaustivness.SMALLEST, Models.BASE, AlgoTypes.STRUCTURED, [4, 32, 256], smallest_attackers, [None], None, 7)
+    (Exhaustivness.SMALLEST, Models.BASE, AlgoTypes.BASE, [4, 32, 256], smallest_attackers, [None], None, -1),
+    (Exhaustivness.SMALLEST, Models.BASE, AlgoTypes.STRUCTURED, [4, 32, 256], smallest_attackers, [None], None, -1)
 )
 
 # Main

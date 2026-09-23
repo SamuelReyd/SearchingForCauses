@@ -2,8 +2,7 @@ import math
 from collections import defaultdict, deque
 import numpy as np
 from actualcauses import SCM, BaseNumpyModel
-from dataclasses import dataclass, asdict
-import networkx as nx
+from dataclasses import dataclass
 import matplotlib.pyplot as plt
 
 T_LABEL = "T"
@@ -329,16 +328,6 @@ def show_scm(scm):
     for i, s in enumerate(scm.V):
         print(f"{s}: {int(scm.v[i])}")
 
-def render_dag(dag, figsize=(6, 4), node_size=500, font_size=10):
-    G = nx.DiGraph()
-    for v, ps in dag.items():
-        for p in ps:
-            G.add_edge(p, v)
-    pos = nx.spring_layout(G)
-    plt.figure(figsize=figsize)
-    nx.draw(G, pos, with_labels=True, arrows=True,
-            node_size=node_size, font_size=font_size)
-    plt.show()
 
 if __name__ == "__main__":
     rng = np.random.default_rng(40)

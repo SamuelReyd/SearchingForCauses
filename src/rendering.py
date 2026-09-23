@@ -76,7 +76,7 @@ def get_values_ILP(metrics, folder):
     return pd.DataFrame(table, columns=columns)
 
 # == Main figure ==
-def plot_general(df, models, metrics, no_share=None, agg="median", folder="figures/"):
+def plot_general(df, models, metrics, no_share=None, agg="median", folder="figures/", beam_sizes=None):
     rows, cols = len(metrics),len(models)
     _, axes = plt.subplots(rows, cols, figsize=(w*cols,h*rows), sharex=True)
     
@@ -124,10 +124,13 @@ def plot_general(df, models, metrics, no_share=None, agg="median", folder="figur
         else: ls = "-"
         axes[1,0].plot([], c="grey", ls=ls, label=label_map[algo])
     axes[1,0].legend()
+
+    if beam_sizes is not None:
+        for ax in axes[:,-1]:
+            ax.set_xticks(x, beam_sizes)
     
     for ax, metric in zip(axes.T[0], metrics): ax.set_ylabel(metric)
     plt.tight_layout()
-    # plt.savefig(folder+"-".join(metrics)+"-mean.pdf")
     plt.savefig(folder+"-".join(metrics)+f"-{agg}.pdf")
     plt.show()
 
@@ -158,25 +161,26 @@ def plot_spaguetti(df, models, algo, metric):
     plt.show()
 
 # == Tradeff figure ==
-def plot_tradeoff(df, exh, algo, n, quality_metric, ax=None):
+def plot_tradeoff(df, exh, algo, n, quality_metric, eff_metric="n_calls", ax=None):
     if ax is None: 
         plt.figure(figsize=(w*1.2,h))
         ax = plt.gca()
+    
     index = (
         (df.exh==exh) & (df.heuristic.isna()) & (df.algo == algo) & (df.model == "base") & (df.n == n)
     )
-    df[[quality_metric, "time"]] = df[[quality_metric, "time"]].apply(pd.to_numeric, errors='coerce')
+    df[[quality_metric, eff_metric]] = df[[quality_metric, eff_metric]].apply(pd.to_numeric, errors='coerce')
     group = df[index].groupby(["bs"], dropna=True)
-    stds = group[[quality_metric, "time"]].std()
-    lows = group[[quality_metric, "time"]].quantile(.25)
-    highs = group[[quality_metric, "time"]].quantile(.75)
-    df_mean = group[[quality_metric, "time"]].mean()
-    df_median = group[[quality_metric, "time"]].median()
+    stds = group[[quality_metric, eff_metric]].std()
+    lows = group[[quality_metric, eff_metric]].quantile(.25)
+    highs = group[[quality_metric, eff_metric]].quantile(.75)
+    df_mean = group[[quality_metric, eff_metric]].mean()
+    df_median = group[[quality_metric, eff_metric]].median()
     
-    t_std = stds.time #/ 2
+    t_std = stds[eff_metric] #/ 2
     q_std = stds[quality_metric] #/ 2
-    t_high = highs.time
-    t_low = lows.time
+    t_high = highs[eff_metric]
+    t_low = lows[eff_metric]
     q_high = highs[quality_metric]
     q_low = lows[quality_metric]
     if quality_metric == "accuracy":
@@ -184,20 +188,21 @@ def plot_tradeoff(df, exh, algo, n, quality_metric, ax=None):
     else:
         df_ = df_median
     bs = df_.index.array
-    t = df_.time.array
+    t = df_[eff_metric].array
     q = df_[quality_metric].array
     if quality_metric == "accuracy":
-        ax.errorbar(t, q, xerr=t_std, ls='--',capsize=2, ecolor="grey")
+        ax.errorbar(t, q, xerr=t_std, ls='--',marker="x", capsize=2, ecolor="grey")
     else:
-        ax.errorbar(t, q, xerr=[t-t_low, t_high-t], yerr=[q-q_low, q_high-q], ls='--',capsize=2, ecolor="grey")
+        ax.errorbar(t, q, xerr=[t-t_low, t_high-t], yerr=[q-q_low, q_high-q], ls='--',marker="x", capsize=2, ecolor="grey")
     for xi, yi, label in zip(t, q, bs):
         if label in (2, 4, 8):
             ax.text(xi, yi, label, fontsize=8, ha='right', va='bottom')
         else:
-            ax.text(xi, yi, label, fontsize=8, ha='left', va='top')
+            if label == 256 and exh == "smallest": continue
+            ax.text(xi, yi, label, fontsize=8, ha='left', va='top', rotation=60)
     # ax.set_ylim(min(q)-12, max(q) + .1*(max(q)-min(q)))
     ax.set_xlim(min(t)/2., max(t)*2.)
-    ax.set_xlabel("time (s)")
+    ax.set_xlabel(eff_metric)
     ax.set_ylabel(quality_metric)
     ax.set_xscale("log")
 
@@ -265,15 +270,23 @@ def show_smallest_comparison(df, beam_sizes, ax=None):
     ax.set_yscale("log")
     ax.set_ylabel("time (s)")
     ax.set_xlabel("|V|")
-    ax.legend(loc="lower right", ncols=1)
+    ax.legend(loc="lower right", ncols=2)
 
 def show_smallest_perf(df, beam_sizes, ax=None):
     if ax is None: ax = plt.gca()
-    for i,bs in enumerate((2,4,8,16,32,64)):
-        index = (df.exh == "smallest") & (df.algo == "base_algo") & (df.bs == bs)
+    comps = [("structured", bs) for bs in beam_sizes]
+    comps += [("base_algo", bs) for bs in beam_sizes]
+        
+    for c, (algo, bs) in enumerate(comps):
+        index = (df.exh == "smallest") & (df.algo == algo) & (df.bs == bs)
         df_ = df[index].groupby(["n"])["accuracy"].mean()
         x = np.array([len(get_SMK_V(n)) for n in df_.index])
-        ax.plot(x+.8*i, df_.array, label=f"b={bs}")
+        ax.plot(x+.5*c, df_.array+.5*c)#, label=f"b={bs}")
+        label = label_map[algo]
+        if bs is not None: 
+            index &= (df.bs == bs)
+            label += f"{bs}"
+        ax.plot([],label=label, c=f"C{c}", marker="x")
     ax.legend()
     ax.set_xlabel("|V|")
     ax.set_ylabel("Accuracy")
@@ -281,7 +294,7 @@ def show_smallest_perf(df, beam_sizes, ax=None):
 def plot_smallest(df, folder="figures/"):
     _, axes = plt.subplots(1,2, figsize=(3*w, 1.5*h))
     show_smallest_comparison(df, (4,32,256), ax=axes[0])
-    show_smallest_perf(df, (2,4,6,16,32,64), ax=axes[1])
+    show_smallest_perf(df, (4,32,256), ax=axes[1])
     axes[0].set_title("Time against system size")
     axes[1].set_title("Accuracy against system size (MBS)")
     plt.tight_layout()
@@ -447,19 +460,12 @@ def locate_text_numbers(df):
     index = ((df.model=="base")&(df.n==5)&(df.heuristic.isna())&(df.bs==4)&(df.exh=="full"))
     df_ = df[index].groupby(["algo"]).dice.mean()
     print(f"base model, full, n=10, bs=4:             base->ISI: +{df_.loc['structured'] - df_.loc['base_algo']:.1f} dice points")
-    
-    index = ((df.model=="base")&(df.n==2)&(df.bs==256)&(df.heuristic.isna())&(df.exh=="full"))
-    df_ = df[index].groupby(["algo"]).n_calls.mean()
-    print(f"base model, full, n=2, bs=256:            base->ISI: {(df_.loc['base_algo'] - df_.loc['structured'])/df_.loc['base_algo']:.0%} less calls")
-    
-    index = ((df.model=="base")&(df.n==5)&(df.bs==2)&(df.heuristic.isna())&(df.exh=="full"))
-    df_ = df[index].groupby(["algo"]).n_calls.mean()
-    print(f"base model, full, n=5, bs=2:              base->ISI: {(df_.loc['base_algo'] - df_.loc['structured'])/df_.loc['base_algo']:.0%} less calls")
-    
-    index = ((df.model=="non-boolean")&(df.n==10)&(df.bs==16)&(df.heuristic.isna())&(df.exh=="full"))
-    df_ = df[index].groupby(["algo"]).n_calls.mean()
-    print(f"non-boolean model, full, n=10, bs=16:     base->ISI: {(df_.loc['base_algo'] - df_.loc['structured'])/df_.loc['base_algo']:.0%} less calls")
 
+    for n in (2, 5, 10):
+        index = ((df.model=="base")&(df.n==n)&(df.bs==-1)&(df.heuristic.isna())&(df.exh=="exact")&(df.algo=="structured"))
+        calls = df[index].n_calls
+        times = df[index].time
+        print(f"base model, full, n={n},  bs=-1: {calls.mean():.2f}±{calls.std():.2f} calls / {times.mean():.2f}±{times.std():.2f} calls")
 
 
 if __name__ == "__main__":
@@ -470,7 +476,7 @@ if __name__ == "__main__":
 
     df_ilp = get_values_ILP(["accuracy"], "results_smallest/")
     df_smallest = get_values(exps_smallest, ["accuracy"], folder="results_smallest/")
-    df_smallest = pd.concat([df_reg, df_ilp], ignore_index=True)
+    df_smallest = pd.concat([df_smallest, df_ilp], ignore_index=True)
 
     df.F1 *= 100
     df.dice *= 100
@@ -484,8 +490,8 @@ if __name__ == "__main__":
     (Models.NOISY.value, "lucb"), 
     (Models.NOISY.value, "naive"))
 
-    plot_general(df, models, ["dice", "n_calls"], [1], "median", "figures/")
-    # plot_full_tradeoffs(pd.concat([df,df_reg]), "figures/")
+    # plot_general(df, models, ["dice", "n_calls"], [1], "median", "figures/")
+    plot_full_tradeoffs(pd.concat([df,df_reg]), "figures/")
     # plot_smallest(df_smallest)
     # plot_all_regressions(df_reg)
     # plot_heuristic(df)
@@ -496,16 +502,15 @@ if __name__ == "__main__":
     # lines, index = run_sanity_checks(sanity_checks)
     # plot_sanity_checks(lines, index)
 
-    # """Comparison"""
-    # # Compare ISI/MBS on n_calls
+    """Comparison"""
+    # print("Compare ISI/MBS on n_calls")
     # print(compare_algo(df, "ISI", "n_calls", "call_gain_ISI", "tables/"))
-    # # Compare ISI/MBS on dice
+    # print("Compare ISI/MBS on dice")
     # print(compare_algo(df, "ISI", "dice", "dice_gain_ISI", "tables/"))
-    # # Compare Naive/LUCB on n_calls
+    # print("Compare Naive/LUCB on n_calls")
     # print(compare_algo(df, "lucb", "n_calls", "call_gain_LUCB", "tables/"))
-    # # Compare Naive/LUCB on dice
+    # print("Compare Naive/LUCB on dice")
     # print(compare_algo(df, "lucb", "dice", "dice_gain_LUCB", "tables/"))
-    # # Test
     # locate_text_numbers(df)
 
     # """Exact identification"""
