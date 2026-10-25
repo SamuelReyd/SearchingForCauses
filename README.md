@@ -24,16 +24,16 @@ To reproduce the experiment from the paper, run:
 
 ## Citation
 
-If you use this code for an academic work, please use the following citation:
+If you use this code for academic work, please use the following citation:
 
-Reyd, S., Diaconescu, A., & Dessalles, J. L. (2025). Searching for actual causes: Approximate algorithms with adjustable precision. arXiv preprint arXiv:2507.07857.
+Reyd, S., Diaconescu, A., & Dessalles, J. L. (2026). Searching for actual causes: Approximate algorithms with adjustable precision. Transactions on Machine Learning Research (TMLR).
 
-@misc{reyd2025searchingactualcauses,
-      title={Searching for actual causes: Approximate algorithms with adjustable precision}, 
-      author={Samuel Reyd and Ada Diaconescu and Jean-Louis Dessalles},
-      year={2025},
-      eprint={2507.07857},
-      archivePrefix={arXiv},
-      primaryClass={cs.AI},
-      url={https://arxiv.org/abs/2507.07857}, 
+
+````bibtex
+@article{reyd2026searchingactualcauses,
+  title        = {Searching for actual causes: Approximate algorithms with adjustable precision},
+  author       = {Samuel Reyd and Ada Diaconescu and Jean-Louis Dessalles},
+  journal      = {Transactions on Machine Learning Research},
+  year         = {2026},
+  url          = {https://openreview.net/forum?id=3NlYZPCH9v&}
 }
